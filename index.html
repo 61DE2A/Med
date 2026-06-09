@@ -1,0 +1,2270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plantão Enfermagem</title>
+<style>
+  :root {
+    --bg: #080604;
+    --fg: #e7ebf3;
+    --muted: #a6b0c3;
+    --accent: #c8a878;
+    --accent-2: #c87840;
+    --green: #6aaf7a;
+    --red: #d06050;
+    --warn: #c89840;
+    --primary: #c8a878;
+    --primary-dark: #a88050;
+    --glass-bg: rgba(200,168,80,0.045);
+    --glass-border: rgba(200,168,80,0.14);
+    --glass-border-strong: rgba(200,168,80,0.22);
+    --glass-shadow: 0 10px 40px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.06);
+    --glass-shadow-lg: 0 16px 60px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.07);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --pad: 20px;
+    --font: Tahoma, "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Monaco, Consolas, "Courier New", monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  html { background: #080604; }
+
+  body {
+    font-family: var(--font);
+    color: var(--fg);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    background: transparent;
+    overflow-x: hidden;
+  }
+
+  /* ── FUNDO ASCII ── */
+  #ascii-bg {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -2;
+    display: block; width: 100vw; height: 100vh; pointer-events: none;
+  }
+  #ascii-overlay {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: rgba(8,6,4,0.65);
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100; width: 100%;
+    backdrop-filter: saturate(140%) blur(14px);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
+    background: linear-gradient(180deg, rgba(20,16,10,.82), rgba(10,8,4,.60));
+    border-bottom: 1px solid rgba(200,168,80,.14);
+    box-shadow: 0 8px 28px rgba(0,0,0,.55);
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 12px;
+    color: var(--fg);
+  }
+  header .logo { font-size: 20px; }
+  header h1 { font-size: 16px; font-weight: 700; letter-spacing: .01em; }
+  header p { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── GLASS CARD BASE ── */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(10px) saturate(130%);
+    -webkit-backdrop-filter: blur(10px) saturate(130%);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  /* ── HOME ── */
+  .home-card {
+    padding: 28px 24px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .home-card h2 { color: var(--accent); font-size: 18px; margin-bottom: 5px; }
+  .home-card p { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .form-row input {
+    flex: 1; min-width: 170px;
+    background: rgba(200,168,80,.06);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: 9px 13px;
+    font-size: 14px;
+    color: var(--fg);
+    outline: none;
+    transition: border-color .2s, background .2s;
+    font-family: var(--font);
+  }
+  .form-row input::placeholder { color: var(--muted); }
+  .form-row input:focus { border-color: var(--accent); background: rgba(200,168,80,.10); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(180deg, rgba(200,168,80,.22), rgba(200,168,80,.10));
+    color: var(--accent);
+    border: 1px solid var(--glass-border-strong);
+    border-radius: var(--radius-sm);
+    padding: 9px 20px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: background .18s, transform .1s, border-color .18s;
+    font-family: var(--font);
+    letter-spacing: .01em;
+  }
+  .btn:hover { background: linear-gradient(180deg, rgba(200,168,80,.32), rgba(200,168,80,.16)); border-color: rgba(200,168,80,.35); }
+  .btn:active { transform: scale(0.97); }
+  .btn-green {
+    background: linear-gradient(180deg, rgba(106,175,122,.22), rgba(106,175,122,.10));
+    color: var(--green);
+    border-color: rgba(106,175,122,.28);
+  }
+  .btn-green:hover { background: linear-gradient(180deg, rgba(106,175,122,.32), rgba(106,175,122,.16)); }
+  .btn-outline {
+    background: transparent;
+    color: var(--muted);
+    border-color: rgba(200,168,80,.18);
+  }
+  .btn-outline:hover { background: rgba(200,168,80,.08); color: var(--accent); }
+  .btn-sm { padding: 6px 13px; font-size: 12px; }
+  .btn-danger {
+    background: linear-gradient(180deg, rgba(208,96,80,.22), rgba(208,96,80,.10));
+    color: var(--red); border-color: rgba(208,96,80,.28);
+  }
+  .btn-danger:hover { background: linear-gradient(180deg, rgba(208,96,80,.32), rgba(208,96,80,.16)); }
+
+  /* ── PATIENTS SECTION ── */
+  .patients-section h2 {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+  .patient-card {
+    margin-bottom: 12px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    background: rgba(200,168,80,.04);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: box-shadow .2s;
+  }
+  .patient-card:hover { box-shadow: var(--glass-shadow-lg); }
+  .patient-header {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(180deg, rgba(200,120,64,.10), rgba(200,120,64,.03));
+    border-bottom: 1px solid rgba(200,168,80,.10);
+    cursor: pointer;
+  }
+  .patient-card.collapsed .patient-header { border-bottom: none; }
+  .patient-card.collapsed .patient-card-body { display: none; }
+  .patient-header .bed { font-size: 17px; font-weight: 800; color: var(--accent); letter-spacing: .02em; }
+  .patient-header .name { font-size: 14px; font-weight: 500; color: var(--fg); }
+  .patient-header .badge {
+    font-size: 10px; padding: 3px 9px;
+    border-radius: 20px; font-weight: 700;
+    background: rgba(200,168,80,.10); color: var(--muted);
+    border: 1px solid rgba(200,168,80,.15);
+  }
+  .patient-header .badge.done {
+    background: rgba(106,175,122,.14); color: var(--green);
+    border-color: rgba(106,175,122,.22);
+  }
+  .card-actions { display: flex; align-items: center; gap: 5px; }
+  .btn-icon {
+    background: transparent; border: none; cursor: pointer;
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: var(--muted);
+    transition: background .15s, color .15s;
+  }
+  .btn-icon:hover { background: rgba(200,168,80,.12); color: var(--accent); }
+  .menu-wrap { position: relative; }
+  .menu-dropdown {
+    display: none;
+    position: absolute; right: 0; top: 34px;
+    background: rgba(16,12,6,.96);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: var(--glass-shadow-lg);
+    min-width: 160px; z-index: 200; overflow: hidden;
+    backdrop-filter: blur(18px);
+  }
+  .menu-dropdown.open { display: block; }
+  .menu-item {
+    width: 100%; background: transparent; border: none;
+    padding: 10px 16px; text-align: left; font-size: 13px;
+    cursor: pointer; color: var(--fg);
+    display: flex; align-items: center; gap: 8px;
+    transition: background .12s; font-family: var(--font);
+  }
+  .menu-item:hover { background: rgba(200,168,80,.09); }
+  .menu-item.danger { color: var(--red); }
+  .menu-item.danger:hover { background: rgba(208,96,80,.09); }
+
+  /* ── TABS ── */
+  .patient-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(200,168,80,.09);
+    background: rgba(0,0,0,.18);
+  }
+  .patient-tab {
+    flex: 1; padding: 9px;
+    text-align: center; font-size: 12px; font-weight: 600;
+    color: var(--muted); cursor: pointer; border: none;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+    font-family: var(--font);
+  }
+  .patient-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .patient-tab:disabled { opacity: .35; cursor: default; }
+  .tab-content { display: none; padding: 16px; }
+  .tab-content.active { display: block; }
+
+  /* ── ADMISSION ── */
+  .admission-container {
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow-lg);
+    background: rgba(200,168,80,.04);
+    backdrop-filter: blur(10px);
+  }
+  .admission-header {
+    background: linear-gradient(180deg, rgba(200,120,64,.18), rgba(200,120,64,.06));
+    border-bottom: 1px solid rgba(200,168,80,.12);
+    padding: 16px 20px;
+  }
+  .admission-header .patient-info { font-size: 17px; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+  .progress-bar-wrap { background: rgba(255,255,255,.12); border-radius: 20px; height: 5px; overflow: hidden; }
+  .progress-bar-fill { background: var(--accent); height: 100%; border-radius: 20px; transition: width .4s ease; }
+  .progress-label { font-size: 11px; color: var(--muted); margin-top: 5px; }
+  .step-body { padding: 20px; }
+  .step-title {
+    font-size: 16px; font-weight: 700; color: var(--accent);
+    margin-bottom: 18px; padding-bottom: 10px;
+    border-bottom: 1px solid rgba(200,168,80,.14);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .step-title span { font-size: 18px; }
+  .step-nav {
+    padding: 13px 20px;
+    background: rgba(0,0,0,.22);
+    border-top: 1px solid rgba(200,168,80,.09);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  /* ── QUESTION GROUPS ── */
+  .q-group {
+    background: rgba(200,168,80,.04);
+    border: 1px solid rgba(200,168,80,.10);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .q-group h3 {
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    text-transform: uppercase; letter-spacing: .09em; margin-bottom: 12px;
+  }
+  .q-item { margin-bottom: 12px; }
+  .q-item:last-child { margin-bottom: 0; }
+  .q-label { font-size: 13px; font-weight: 600; color: var(--fg); margin-bottom: 7px; display: block; }
+  .q-label small { font-weight: 400; color: var(--muted); }
+
+  /* ── PILLS ── */
+  .pill-group { display: flex; flex-wrap: wrap; gap: 7px; }
+  .pill-group input[type="radio"],
+  .pill-group input[type="checkbox"] { display: none; }
+  .pill-group label {
+    padding: 6px 14px;
+    border: 1px solid rgba(200,168,80,.16);
+    border-radius: 20px; font-size: 12px; font-weight: 500;
+    color: var(--muted); cursor: pointer;
+    transition: all .15s;
+    background: rgba(200,168,80,.04);
+  }
+  .pill-group label:hover { border-color: rgba(200,168,80,.3); color: var(--fg); }
+  .pill-group input[type="radio"]:checked + label,
+  .pill-group input[type="checkbox"]:checked + label {
+    background: rgba(200,168,80,.18); border-color: rgba(200,168,80,.4);
+    color: var(--accent); font-weight: 700;
+  }
+  .pill-group input[type="radio"].pill-green:checked + label,
+  .pill-group input[type="checkbox"].pill-green:checked + label {
+    background: rgba(106,175,122,.16); border-color: rgba(106,175,122,.35); color: var(--green);
+  }
+  .pill-group input[type="radio"].pill-red:checked + label,
+  .pill-group input[type="checkbox"].pill-red:checked + label {
+    background: rgba(208,96,80,.16); border-color: rgba(208,96,80,.35); color: var(--red);
+  }
+
+  /* ── TEXT INPUTS ── */
+  .text-input {
+    width: 100%;
+    background: rgba(200,168,80,.06);
+    border: 1px solid rgba(200,168,80,.14);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px; color: var(--fg); outline: none;
+    transition: border-color .2s, background .2s;
+    font-family: var(--font);
+  }
+  .text-input::placeholder { color: var(--muted); }
+  .text-input:focus { border-color: rgba(200,168,80,.4); background: rgba(200,168,80,.10); }
+  textarea.text-input { min-height: 78px; resize: vertical; }
+  .input-row { display: flex; gap: 9px; flex-wrap: wrap; }
+  .input-row .text-input { flex: 1; min-width: 90px; }
+
+  /* ── COND BLOCK ── */
+  .cond-block {
+    background: rgba(200,168,80,.04);
+    border-left: 2px solid rgba(200,168,80,.18);
+    border-radius: 0 8px 8px 0;
+    padding: 12px;
+    margin-top: 9px;
+    display: none;
+  }
+  .cond-block.visible { display: block; }
+
+  /* ── RESULT ── */
+  .result-box {
+    background: rgba(200,168,80,.05);
+    border: 1px solid rgba(200,168,80,.13);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 13px; line-height: 1.85;
+    color: var(--fg); white-space: pre-wrap;
+    font-family: var(--mono);
+  }
+  .result-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 14px; }
+
+  /* ── MEDS ── */
+  .med-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 14px; }
+  .med-item {
+    background: rgba(200,168,80,.05);
+    border: 1px solid rgba(200,168,80,.11);
+    border-radius: 10px;
+    padding: 11px 13px;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 9px;
+  }
+  .med-item .med-name { font-weight: 700; font-size: 13px; color: var(--fg); }
+  .med-item .med-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .med-item .med-time { font-size: 12px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .med-status {
+    display: inline-block; width: 11px; height: 11px;
+    border-radius: 50%;
+    background: rgba(200,168,80,.18);
+    cursor: pointer; margin-top: 3px;
+    transition: background .2s; border: none; outline: none;
+  }
+  .med-status.admin { background: var(--green); box-shadow: 0 0 8px rgba(106,175,122,.5); }
+  .med-add-form {
+    background: rgba(200,168,80,.04);
+    border: 1px solid rgba(200,168,80,.10);
+    border-radius: 10px;
+    padding: 13px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+
+  /* ── NOTES ── */
+  .note-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 14px; }
+  .note-item {
+    background: rgba(200,168,80,.05);
+    border: 1px solid rgba(200,168,80,.10);
+    border-radius: 10px;
+    padding: 11px 13px;
+  }
+  .note-item .note-time { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .note-item .note-text { font-size: 13px; color: var(--fg); }
+  .note-add-form { display: flex; flex-direction: column; gap: 9px; }
+
+  /* ── MISC ── */
+  .divider { border: none; border-top: 1px solid rgba(200,168,80,.10); margin: 14px 0; }
+  .empty-state { text-align: center; padding: 22px; color: var(--muted); font-size: 13px; }
+
+  /* ── MED ADMIN RESUMO ── */
+  .med-item-wrap { display: flex; flex-direction: column; }
+  .med-admin-resumo {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: rgba(106,175,122,.08);
+    border-left: 2px solid rgba(106,175,122,.3);
+    border-radius: 0 0 10px 10px;
+    padding: 8px 13px;
+    font-size: 12px; color: #9dd8a0; line-height: 1.5;
+  }
+  .med-admin-resumo-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+  .btn-copy-resumo {
+    background: none; border: none; cursor: pointer;
+    font-size: 13px; flex-shrink: 0; padding: 0 2px; opacity: .6;
+    transition: opacity .15s;
+  }
+  .btn-copy-resumo:hover { opacity: 1; }
+  .med-alta-vig { color: var(--warn); font-size: 12px; }
+
+  /* ── ADMIN MODAL ── */
+  #modal-admin-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(6px);
+    z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  #modal-admin-box {
+    background: rgba(14,10,4,.96);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    box-shadow: var(--glass-shadow-lg);
+    padding: 22px 20px;
+    width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto;
+  }
+  #modal-admin-title { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  #modal-admin-med-name {
+    font-size: 12px; color: var(--muted); margin-bottom: 16px;
+    padding-bottom: 11px; border-bottom: 1px solid rgba(200,168,80,.10);
+  }
+  .modal-field { margin-bottom: 13px; }
+  .modal-label { display: block; font-size: 12px; font-weight: 600; color: var(--fg); margin-bottom: 5px; }
+
+  @media (max-width: 520px) {
+    main { padding: 14px 10px 60px; }
+    .home-card { padding: 20px 14px; }
+    .step-body { padding: 14px; }
+  }
+
+  /* ── CURSOR ── */
+  html, body, * { cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="24" viewBox="0 0 16 24"><path d="M0 0 L0 20 L4 16 L7 23 L9 22 L6 15 L11 15 Z" fill="%23d06030" stroke="%23200800" stroke-width="1"/></svg>') 0 0, auto !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #ascii-bg { display: none; }
+  }
+
+  /* ── MED SPELL / SUGESTÃO ── */
+  .med-nome-unknown {
+    text-decoration: underline wavy var(--red);
+    cursor: pointer;
+  }
+  .med-info-panel {
+    background: rgba(200,168,80,.07);
+    border: 1px solid rgba(200,168,80,.18);
+    border-radius: 10px;
+    padding: 11px 13px;
+    font-size: 12px;
+    color: var(--fg);
+    margin-top: 6px;
+    line-height: 1.7;
+  }
+  .med-info-panel .mip-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 5px; }
+  .med-info-panel .mip-row { display: flex; gap: 6px; margin-bottom: 3px; flex-wrap: wrap; }
+  .mip-label { font-weight: 700; color: var(--muted); min-width: 90px; }
+  .mip-tag {
+    background: rgba(200,168,80,.10);
+    border: 1px solid rgba(200,168,80,.18);
+    border-radius: 20px;
+    padding: 1px 9px;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .mip-tag.red { background: rgba(208,96,80,.10); border-color: rgba(208,96,80,.22); color: var(--red); }
+  .mip-tag.green { background: rgba(106,175,122,.10); border-color: rgba(106,175,122,.22); color: var(--green); }
+
+  /* Popover de sugestões */
+  #med-suggest-pop {
+    position: fixed;
+    background: rgba(14,10,4,.97);
+    border: 1px solid var(--glass-border-strong);
+    border-radius: 12px;
+    box-shadow: var(--glass-shadow-lg);
+    z-index: 600;
+    min-width: 200px;
+    max-width: 280px;
+    overflow: hidden;
+    padding: 6px 0;
+  }
+  .med-sug-item {
+    padding: 9px 14px;
+    font-size: 13px;
+    color: var(--fg);
+    cursor: pointer;
+    transition: background .12s;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .med-sug-item:hover { background: rgba(200,168,80,.10); }
+  .med-sug-item .sug-name { font-weight: 700; color: var(--accent); }
+  .med-sug-item .sug-sub { font-size: 11px; color: var(--muted); }
+  .med-sug-none { padding: 9px 14px; font-size: 12px; color: var(--muted); }
+</style>
+
+
+<body>
+<canvas id="ascii-bg"></canvas>
+<div id="ascii-overlay" aria-hidden="true"></div>
+
+<header>
+  <div class="logo">🏥</div>
+  <div>
+    <h1>Plantão Enfermagem</h1>
+    <p>Sistema de organização e admissão de pacientes</p>
+  </div>
+</header>
+
+<main>
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div class="home-card">
+      <h2>Novo Paciente</h2>
+      <p>Informe os dados para criar o cartão do paciente</p>
+      <div class="form-row">
+        <input type="text" id="input-leito" placeholder="Leito (ex: 301A)" maxlength="10">
+        <input type="text" id="input-nome" placeholder="Nome do paciente">
+      </div>
+      <br>
+      <button class="btn btn-green" onclick="criarPaciente()">✚ Criar cartão</button>
+    </div>
+
+    <div class="patients-section">
+      <h2>Pacientes do plantão</h2>
+      <div id="lista-pacientes"></div>
+      <div id="sem-pacientes" class="empty-state">Nenhum paciente cadastrado ainda.</div>
+    </div>
+  </div>
+
+  <!-- ADMISSION SCREEN -->
+  <div id="screen-admission" class="screen">
+    <div class="admission-container">
+      <div class="admission-header">
+        <div class="patient-info" id="adm-patient-title"></div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="adm-progress-bar"></div></div>
+        <div class="progress-label" id="adm-progress-label"></div>
+      </div>
+      <div id="adm-step-content"></div>
+      <div class="step-nav">
+        <button class="btn btn-outline" id="adm-btn-back" onclick="admStep(-1)">← Anterior</button>
+        <button class="btn" id="adm-btn-next" onclick="admStep(1)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="screen-result" class="screen">
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+      <button class="btn btn-outline btn-sm" onclick="voltarParaHome()">← Voltar</button>
+      <h2 style="font-size:17px;color:var(--primary)" id="result-title"></h2>
+    </div>
+    <div class="result-box" id="result-text"></div>
+    <div class="result-actions">
+      <button class="btn btn-sm" onclick="copiarResumo()">📋 Copiar resumo</button>
+      <button class="btn btn-green btn-sm" onclick="finalizarAdmissao()">✓ Confirmar e liberar abas</button>
+    </div>
+  </div>
+</main>
+
+<script>
+// ════════════════════════════════════════════
+// BANCO DE MEDICAÇÕES — carregado do txt
+// ════════════════════════════════════════════
+let MED_DB = [];
+let _medDbPronto = false;
+
+function parseMedTxt(txt) {
+  const resultado = [];
+  for (const linha of txt.split('\n')) {
+    const l = linha.trim();
+    if (!l || l.startsWith('#')) continue;
+    const get = (campo) => {
+      const rx = new RegExp(campo + ':([^A-Z_#]+?)(?=\\s+[A-Z_]+:|$)', 'i');
+      const m = l.match(rx);
+      return m ? m[1].trim() : '';
+    };
+    const nome = get('Med');
+    if (!nome) continue;
+    const vStr = get('V');
+    const advStr = get('ADV');
+    const indStr = get('IND');
+    resultado.push({
+      n: nome,
+      p: get('P') || nome,
+      g: get('G') || 'Geral',
+      v: vStr ? vStr.split(',').map(s => s.trim()).filter(Boolean) : [],
+      e: advStr ? advStr.split(',').map(s => s.trim()).filter(Boolean) : [],
+      i: indStr ? indStr.split(',').map(s => s.trim()).filter(Boolean) : []
+    });
+  }
+  return resultado;
+}
+
+async function carregarMedDb() {
+  try {
+    const r = await fetch('medicacoes.txt');
+    if (!r.ok) throw new Error('status ' + r.status);
+    const txt = await r.text();
+    MED_DB = parseMedTxt(txt);
+    _medDbPronto = true;
+  } catch(e) {
+    console.warn('Não foi possível carregar medicacoes.txt:', e.message);
+    MED_DB = [];
+    _medDbPronto = true;
+  }
+  // Re-renderiza se pacientes já estiverem na tela
+  if (Object.keys(pacientes).length) renderPacientes();
+}
+
+carregarMedDb();
+
+// Normalização para busca
+function normMed(t) {
+  return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+}
+
+function medNoBanco(nome) {
+  const n = normMed(nome);
+  return MED_DB.find(m => normMed(m.n) === n);
+}
+
+function sugerirMeds(nome) {
+  const n = normMed(nome);
+  if (!n) return [];
+  return MED_DB.filter(m => {
+    const mn = normMed(m.n);
+    const mp = normMed(m.p);
+    return mn.includes(n) || n.includes(mn) || mp.includes(n) || n.includes(mp) ||
+      levenshtein(n, mn) <= 3 || levenshtein(n, mp) <= 3;
+  }).slice(0, 6);
+}
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, (_, i) => Array.from({length: n+1}, (_, j) => i === 0 ? j : j === 0 ? i : 0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+// Popover de sugestões
+let _sugPop = null;
+function fecharSugPop() {
+  if (_sugPop) { _sugPop.remove(); _sugPop = null; }
+}
+
+function abrirSugPop(anchor, medNome, patId, medIdx) {
+  fecharSugPop();
+  const sugs = sugerirMeds(medNome);
+  const pop = document.createElement('div');
+  pop.id = 'med-suggest-pop';
+  _sugPop = pop;
+
+  if (sugs.length === 0) {
+    pop.innerHTML = `<div class="med-sug-none">Nenhuma sugestão encontrada</div>`;
+  } else {
+    pop.innerHTML = sugs.map(m => `
+      <div class="med-sug-item" onclick="selecionarSug('${patId}',${medIdx},'${m.n.replace(/'/g,"\\'")}')">
+        <span class="sug-name">${m.n}</span>
+        <span class="sug-sub">${m.p} · ${m.g}</span>
+      </div>`).join('');
+  }
+  document.body.appendChild(pop);
+
+  const rect = anchor.getBoundingClientRect();
+  const pw = pop.offsetWidth || 240;
+  let left = rect.left;
+  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  pop.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  pop.style.left = left + 'px';
+
+  setTimeout(() => document.addEventListener('click', fecharSugPop, {once: true}), 50);
+}
+
+function selecionarSug(patId, medIdx, medNome) {
+  fecharSugPop();
+  const m = medNoBanco(medNome);
+  if (!m) return;
+  // Salvar referência da med do banco no paciente
+  pacientes[patId].meds[medIdx].dbRef = medNome;
+  salvarLS();
+  renderPacientes(); showTab(patId, 'meds');
+}
+
+function buildMedInfoPanel(dbNome) {
+  const m = medNoBanco(dbNome);
+  if (!m) return '';
+  const grupoBadge = `<span class="mip-tag">${m.g}</span>`;
+  const vias = m.v.map(v => `<span class="mip-tag green">${v}</span>`).join(' ');
+  const efeitos = m.e.map(e => `<span class="mip-tag red">${e}</span>`).join(' ');
+  const indicacoes = m.i.map(i => `<span class="mip-tag">${i}</span>`).join(' ');
+  return `
+    <div class="med-info-panel">
+      <div class="mip-title">📋 ${m.n} <span style="font-weight:400;font-size:12px;color:var(--muted)">— ${m.p}</span></div>
+      <div class="mip-row"><span class="mip-label">Grupo:</span>${grupoBadge}</div>
+      <div class="mip-row"><span class="mip-label">Vias:</span>${vias}</div>
+      <div class="mip-row"><span class="mip-label">Efeitos adv.:</span>${efeitos}</div>
+      <div class="mip-row"><span class="mip-label">Indicações:</span>${indicacoes}</div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════
+// DATA STORE + PERSISTÊNCIA
+// ════════════════════════════════════════════
+const LS_KEY = 'plantao_pacientes';
+
+function salvarLS() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(pacientes)); } catch(e) {}
+}
+
+function carregarLS() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) pacientes = JSON.parse(raw);
+  } catch(e) { pacientes = {}; }
+}
+
+let pacientes = {};
+let currentPatientId = null;
+let admCurrentStep = 0;
+let admAnswers = {};
+
+const TOTAL_STEPS = 5;
+
+// ════════════════════════════════════════════
+// PATIENT MANAGEMENT
+// ════════════════════════════════════════════
+function criarPaciente() {
+  const leito = document.getElementById('input-leito').value.trim();
+  const nome = document.getElementById('input-nome').value.trim();
+  if (!leito || !nome) { alert('Preencha o leito e o nome do paciente.'); return; }
+  const id = Date.now().toString();
+  pacientes[id] = { id, leito, nome, admissaoFeita: false, admissaoTexto: '', meds: [], notes: [] };
+  document.getElementById('input-leito').value = '';
+  document.getElementById('input-nome').value = '';
+  salvarLS();
+  renderPacientes();
+}
+
+function renderPacientes() {
+  const lista = document.getElementById('lista-pacientes');
+  const vazio = document.getElementById('sem-pacientes');
+  const ids = Object.keys(pacientes);
+  vazio.style.display = ids.length ? 'none' : 'block';
+  lista.innerHTML = '';
+  ids.forEach(id => {
+    const p = pacientes[id];
+    lista.appendChild(buildPatientCard(p));
+  });
+}
+
+function buildPatientCard(p) {
+  const div = document.createElement('div');
+  div.className = 'patient-card';
+  div.id = 'card-' + p.id;
+
+  const badgeClass = p.admissaoFeita ? 'badge done' : 'badge';
+  const badgeText = p.admissaoFeita ? '✓ Admissão' : 'Pendente';
+  const tabsDisabled = !p.admissaoFeita ? 'disabled' : '';
+
+  div.innerHTML = `
+    <div class="patient-header" onclick="toggleCollapse('${p.id}', event)">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div>
+          <div class="bed">${p.leito}</div>
+          <div class="name">${p.nome}</div>
+        </div>
+        <span class="${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="btn-icon" title="Minimizar" onclick="toggleCollapse('${p.id}', event)" id="collapse-btn-${p.id}">−</button>
+        <div class="menu-wrap">
+          <button class="btn-icon" title="Mais opções" onclick="toggleMenu('${p.id}', event)">⋯</button>
+          <div class="menu-dropdown" id="menu-${p.id}">
+            <button class="menu-item" onclick="reabrirAdmissao('${p.id}');closeMenu('${p.id}')">✎ Refazer admissão</button>
+            <button class="menu-item danger" onclick="removerPaciente('${p.id}')">✕ Remover paciente</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="patient-card-body">
+      <div class="patient-tabs">
+        <button class="patient-tab ${!p.admissaoFeita ? 'active' : ''}" onclick="showTab('${p.id}','adm')">Admissão</button>
+        <button class="patient-tab" ${tabsDisabled} onclick="showTab('${p.id}','meds')">Medicações</button>
+        <button class="patient-tab" ${tabsDisabled} onclick="showTab('${p.id}','notes')">Anotações</button>
+      </div>
+      <div id="tab-adm-${p.id}" class="tab-content ${!p.admissaoFeita ? 'active' : ''}">
+        ${buildAdmTab(p)}
+      </div>
+      <div id="tab-meds-${p.id}" class="tab-content ${p.admissaoFeita ? 'active' : ''}">
+        ${buildMedsTab(p)}
+      </div>
+      <div id="tab-notes-${p.id}" class="tab-content">
+        ${buildNotesTab(p)}
+      </div>
+    </div>
+  `;
+  return div;
+}
+
+function buildAdmTab(p) {
+  if (p.admissaoFeita) {
+    return `
+      <div class="result-box" style="font-size:13px;max-height:200px;overflow-y:auto;">${p.admissaoTexto}</div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="copiarTexto(\`${escapeBacktick(p.admissaoTexto)}\`)">📋 Copiar</button>
+      </div>`;
+  }
+  return `<p style="color:var(--text-soft);font-size:14px;margin-bottom:14px;">A admissão ainda não foi realizada.</p>
+    <button class="btn btn-green" onclick="iniciarAdmissao('${p.id}')">▶ Iniciar admissão</button>`;
+}
+
+function buildMedsTab(p) {
+  let medListHtml = '';
+  if (p.meds.length === 0) {
+    medListHtml = '<div class="empty-state">Nenhuma medicação registrada.</div>';
+  } else {
+    medListHtml = '<div class="med-list">' + p.meds.map((m, i) => {
+      const escapedResumo = (m.adminResumo || '').replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+      const adminSummaryHtml = m.admin && m.adminResumo
+        ? `<div class="med-admin-resumo"><span class="med-admin-resumo-icon">✓</span><span style="flex:1">${(m.adminResumo||'').replace(/</g,'&lt;')}</span><button class="btn-copy-resumo" title="Copiar" onclick="copiarTexto(\`${escapedResumo}\`)">📋</button></div>`
+        : '';
+      const vigilHtml = m.altaVigilancia ? `<div class="med-detail med-alta-vig">⚠️ Alta vigilância</div>` : '';
+      // Verificar se o nome existe no banco (ou se já tem uma ref selecionada)
+      const dbMatch = m.dbRef ? medNoBanco(m.dbRef) : medNoBanco(m.nome);
+      const nomeNoDb = !!dbMatch;
+      const nomeHtml = nomeNoDb
+        ? `<div class="med-name">${(m.nome||'').replace(/</g,'&lt;')}</div>`
+        : `<div class="med-name"><span class="med-nome-unknown" title="Medicação não encontrada no banco — clique para sugestões" onclick="abrirSugPop(this,'${(m.nome||'').replace(/'/g,"\\'")}','${p.id}',${i})">${(m.nome||'').replace(/</g,'&lt;')}</span></div>`;
+      const infoPanelHtml = (m.dbRef || nomeNoDb) ? buildMedInfoPanel(m.dbRef || m.nome) : '';
+      return `<div class="med-item-wrap"><div class="med-item"><div>${nomeHtml}<div class="med-detail">${(m.dose||'').replace(/</g,'&lt;')} · ${(m.via||'').replace(/</g,'&lt;')} · ${(m.freq||'').replace(/</g,'&lt;')}</div>${m.obs ? `<div class="med-detail" style="font-style:italic">${(m.obs||'').replace(/</g,'&lt;')}</div>` : ''}${vigilHtml}</div><div style="display:flex;align-items:center;gap:8px;"><span class="med-time">${(m.horario||'').replace(/</g,'&lt;')}</span><button class="med-status ${m.admin ? 'admin' : ''}" title="${m.admin ? 'Desfazer administração' : 'Registrar administração'}" onclick="toggleMedAdmin('${p.id}',${i})"></button><button class="btn btn-danger btn-sm" onclick="removerMed('${p.id}',${i})">✕</button></div></div>${infoPanelHtml}${adminSummaryHtml}</div>`;
+    }).join('') + '</div>';
+  }
+  return `${medListHtml}
+    <hr class="divider">
+    <div class="med-add-form">
+      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:4px;">✚ Adicionar medicação</div>
+      <div class="input-row">
+        <input class="text-input" id="med-nome-${p.id}" placeholder="Medicamento">
+        <input class="text-input" id="med-dose-${p.id}" placeholder="Dose" style="max-width:110px">
+      </div>
+      <div class="input-row">
+        <input class="text-input" id="med-via-${p.id}" placeholder="Via (IV, VO…)" style="max-width:120px">
+        <input class="text-input" id="med-freq-${p.id}" placeholder="Frequência" style="max-width:140px">
+        <input class="text-input" id="med-horario-${p.id}" placeholder="Horário" style="max-width:100px">
+      </div>
+      <div class="input-row" style="align-items:center">
+        <input class="text-input" id="med-obs-${p.id}" placeholder="Observações (opcional)">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;padding:0 4px;"><input type="checkbox" id="med-altavig-${p.id}"> Alta vigilância</label>
+      </div>
+      <div><button class="btn btn-green btn-sm" onclick="adicionarMed('${p.id}')">✚ Adicionar</button></div>
+    </div>`;
+}
+
+function buildNotesTab(p) {
+  let noteHtml = '';
+  if (p.notes.length === 0) {
+    noteHtml = '<div class="empty-state">Nenhuma anotação registrada.</div>';
+  } else {
+    noteHtml = '<div class="note-list">' + p.notes.map((n, i) => `
+      <div class="note-item">
+        <div class="note-time">${n.time}</div>
+        <div class="note-text">${n.text}</div>
+        <div style="margin-top:6px;"><button class="btn btn-danger btn-sm" onclick="removerNote('${p.id}',${i})">✕ Remover</button></div>
+      </div>`).join('') + '</div>';
+  }
+  return `${noteHtml}
+    <hr class="divider">
+    <div class="note-add-form">
+      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:4px;">✚ Nova anotação</div>
+      <textarea class="text-input" id="note-text-${p.id}" placeholder="Registre aqui a observação…"></textarea>
+      <div><button class="btn btn-sm" onclick="adicionarNote('${p.id}')">✚ Registrar</button></div>
+    </div>`;
+}
+
+function showTab(id, tab) {
+  const p = pacientes[id];
+  const tabs = ['adm', 'meds', 'notes'];
+  tabs.forEach(t => {
+    const el = document.getElementById(`tab-${t}-${id}`);
+    if (el) el.classList.remove('active');
+  });
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    const btns = card.querySelectorAll('.patient-tab');
+    btns.forEach((b, i) => { b.classList.remove('active'); if (i === tabs.indexOf(tab)) b.classList.add('active'); });
+  }
+  const target = document.getElementById(`tab-${tab}-${id}`);
+  if (target) target.classList.add('active');
+}
+
+function removerPaciente(id) {
+  if (!confirm('Remover este paciente?')) return;
+  delete pacientes[id];
+  salvarLS();
+  renderPacientes();
+}
+
+// ════════════════════════════════════════════
+// MEDS & NOTES
+// ════════════════════════════════════════════
+function adicionarMed(id) {
+  const nome = document.getElementById('med-nome-' + id).value.trim();
+  if (!nome) { alert('Informe o nome do medicamento.'); return; }
+  const altaVigEl = document.getElementById('med-altavig-' + id);
+  pacientes[id].meds.push({
+    nome,
+    dose: document.getElementById('med-dose-' + id).value.trim() || '-',
+    via: document.getElementById('med-via-' + id).value.trim() || '-',
+    freq: document.getElementById('med-freq-' + id).value.trim() || '-',
+    horario: document.getElementById('med-horario-' + id).value.trim() || '--:--',
+    obs: document.getElementById('med-obs-' + id).value.trim(),
+    altaVigilancia: altaVigEl ? altaVigEl.checked : false,
+    admin: false,
+    adminResumo: ''
+  });
+  salvarLS();
+  renderPacientes(); showTab(id, 'meds');
+}
+
+function removerMed(id, idx) {
+  pacientes[id].meds.splice(idx, 1);
+  salvarLS();
+  renderPacientes(); showTab(id, 'meds');
+}
+
+function toggleMedAdmin(patId, idx) {
+  const m = pacientes[patId].meds[idx];
+  if (m.admin) {
+    // desfazer
+    m.admin = false;
+    m.adminResumo = '';
+    renderPacientes(); showTab(patId, 'meds');
+    return;
+  }
+  // abrir modal para preencher dados da administração
+  abrirModalAdmin(patId, idx);
+}
+
+function abrirModalAdmin(patId, idx) {
+  const m = pacientes[patId].meds[idx];
+  // remove modal anterior se existir
+  document.getElementById('modal-admin-overlay')?.remove();
+
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const horaAtual = `${hh}:${mm}`;
+
+  // numeração do item na prescrição (índice + 1)
+  const numItem = idx + 1;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-admin-overlay';
+  overlay.innerHTML = `
+    <div id="modal-admin-box">
+      <div id="modal-admin-title">💉 Registrar Administração</div>
+      <div id="modal-admin-med-name">${(m.nome||'').replace(/</g,'&lt;')} · ${(m.dose||'').replace(/</g,'&lt;')} · ${(m.via||'').replace(/</g,'&lt;')}</div>
+
+      <div class="modal-field">
+        <label class="modal-label">Horário da administração</label>
+        <input class="text-input" id="madm-hora" type="time" value="${horaAtual}">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Via de administração</label>
+        <input class="text-input" id="madm-via" placeholder="Ex: IV, VO, SC, IM…" value="${(m.via && m.via !== '-' ? m.via : '')}">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Local anatômico / Dispositivo</label>
+        <input class="text-input" id="madm-local" placeholder="Ex: AVP MSD, MBE, deltóide esquerdo…">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Queixas / Intercorrências durante administração</label>
+        <input class="text-input" id="madm-intercorr" placeholder="Ou deixe em branco para 'Sem intercorrências'">
+      </div>
+      ${m.altaVigilancia ? `
+      <div class="modal-field">
+        <label class="modal-label">⚠️ Dupla checagem — nome do profissional</label>
+        <input class="text-input" id="madm-dupla" placeholder="Nome e função">
+      </div>` : ''}
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button class="btn btn-green" onclick="confirmarAdmin('${patId}',${idx})">✓ Confirmar</button>
+        <button class="btn btn-outline" onclick="document.getElementById('modal-admin-overlay').remove()">Cancelar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('madm-hora').focus();
+}
+
+function confirmarAdmin(patId, idx) {
+  const m = pacientes[patId].meds[idx];
+  const hora = document.getElementById('madm-hora')?.value || m.horario;
+  const via  = document.getElementById('madm-via')?.value.trim() || m.via;
+  const local = document.getElementById('madm-local')?.value.trim() || 'local não informado';
+  const intercorrInput = document.getElementById('madm-intercorr')?.value.trim();
+  const intercorr = intercorrInput || 'Sem intercorrências durante a administração.';
+  const dupla = m.altaVigilancia ? (document.getElementById('madm-dupla')?.value.trim() || '') : '';
+
+  let resumo = `${hora} – Administrado ${m.nome}, via ${via}, em ${local}, conforme prescrição médica (CPM). ${intercorr}`;
+  if (m.altaVigilancia && dupla) resumo += ` Dupla checagem realizada com ${dupla}.`;
+  else if (m.altaVigilancia) resumo += ` Medicação de alta vigilância — dupla checagem não informada.`;
+
+  m.admin = true;
+  m.adminResumo = resumo;
+  salvarLS();
+  document.getElementById('modal-admin-overlay')?.remove();
+  renderPacientes(); showTab(patId, 'meds');
+}
+
+function adicionarNote(id) {
+  const text = document.getElementById('note-text-' + id).value.trim();
+  if (!text) return;
+  const now = new Date();
+  const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ' — ' +
+               now.toLocaleDateString('pt-BR');
+  pacientes[id].notes.push({ time, text });
+  salvarLS();
+  renderPacientes(); showTab(id, 'notes');
+}
+
+function removerNote(id, idx) {
+  pacientes[id].notes.splice(idx, 1);
+  salvarLS();
+  renderPacientes(); showTab(id, 'notes');
+}
+
+// ════════════════════════════════════════════
+// ADMISSION FLOW
+// ════════════════════════════════════════════
+function iniciarAdmissao(id) {
+  currentPatientId = id;
+  admCurrentStep = 1;
+  admAnswers = {};
+  showScreen('admission');
+  renderAdmStep();
+}
+
+function reabrirAdmissao(id) {
+  pacientes[id].admissaoFeita = false;
+  pacientes[id].admissaoTexto = '';
+  salvarLS();
+  iniciarAdmissao(id);
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function voltarParaHome() {
+  showScreen('home');
+  renderPacientes();
+}
+
+function admStep(dir) {
+  if (dir === 1 && admCurrentStep < TOTAL_STEPS) {
+    coletarRespostas(admCurrentStep);
+    admCurrentStep++;
+    renderAdmStep();
+  } else if (dir === 1 && admCurrentStep === TOTAL_STEPS) {
+    coletarRespostas(admCurrentStep);
+    gerarResumo();
+  } else if (dir === -1 && admCurrentStep > 1) {
+    admCurrentStep--;
+    renderAdmStep();
+  }
+}
+
+function renderAdmStep() {
+  const p = pacientes[currentPatientId];
+  document.getElementById('adm-patient-title').textContent = `${p.leito} — ${p.nome}`;
+  const pct = Math.round(((admCurrentStep - 1) / TOTAL_STEPS) * 100);
+  document.getElementById('adm-progress-bar').style.width = pct + '%';
+  document.getElementById('adm-progress-label').textContent = `Etapa ${admCurrentStep} de ${TOTAL_STEPS}`;
+  document.getElementById('adm-btn-back').style.visibility = admCurrentStep > 1 ? 'visible' : 'hidden';
+  document.getElementById('adm-btn-next').textContent = admCurrentStep === TOTAL_STEPS ? 'Finalizar →' : 'Próximo →';
+  document.getElementById('adm-step-content').innerHTML = buildStep(admCurrentStep);
+  restaurarRespostas(admCurrentStep);
+  bindConditionals();
+}
+
+function buildStep(n) {
+  if (n === 1) return buildStep1();
+  if (n === 2) return buildStep2();
+  if (n === 3) return buildStep3();
+  if (n === 4) return buildStep4();
+  if (n === 5) return buildStep5();
+  return '';
+}
+
+// ─────────────────────────────────────
+// STEP 1 — Identificação e Segurança
+// ─────────────────────────────────────
+function buildStep1() {
+  return `<div class="step-body">
+  <div class="step-title"><span>🔐</span> Identificação e Segurança</div>
+
+  <div class="q-group">
+    <h3>Como encontrou o paciente?</h3>
+    <div class="q-item">
+      <div class="pill-group">
+        ${radio('enc','Acordado no leito')}${radio('enc','Dormindo no leito')}
+        ${radio('enc','Acordado na poltrona')}${radio('enc','Dormindo na poltrona')}
+      </div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Pulseira de Identificação</h3>
+    <div class="q-item"><label class="q-label">Pulseira presente?</label>
+      <div class="pill-group">${radioColor('puls_presente','Sim','green')}${radioColor('puls_presente','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Pulseira legível?</label>
+      <div class="pill-group">${radioColor('puls_legivel','Sim','green')}${radioColor('puls_legivel','Não','red')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Pulseira de Risco de Queda</h3>
+    <div class="q-item"><div class="pill-group">${radioColor('puls_queda','Sim','green')}${radioColor('puls_queda','Não','red')}${radio('puls_queda','Não se aplica')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Pulseira de Alergia</h3>
+    <div class="q-item"><div class="pill-group">${radioColor('puls_alergia','Sim','green')}${radioColor('puls_alergia','Não','red')}${radio('puls_alergia','Não se aplica')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Segurança do Leito</h3>
+    <div class="q-item"><label class="q-label">Cama em posição baixa?</label>
+      <div class="pill-group">${radioColor('cama_baixa','Sim','green')}${radioColor('cama_baixa','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Grades laterais elevadas?</label>
+      <div class="pill-group">${radioColor('grades','Sim','green')}${radioColor('grades','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Rodas travadas?</label>
+      <div class="pill-group">${radioColor('rodas','Sim','green')}${radioColor('rodas','Não','red')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Campainha</h3>
+    <div class="q-item"><label class="q-label">Campainha localizada?</label>
+      <div class="pill-group">${radioColor('camp_local','Sim','green')}${radioColor('camp_local','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Campainha testada?</label>
+      <div class="pill-group">${radioColor('camp_testada','Sim','green')}${radioColor('camp_testada','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Paciente orientado sobre utilização da campainha?</label>
+      <div class="pill-group">${radioColor('camp_ori','Sim','green')}${radioColor('camp_ori','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Paciente orientado a não levantar sozinho?</label>
+      <div class="pill-group">${radioColor('nao_levantar','Sim','green')}${radioColor('nao_levantar','Não','red')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Acompanhante</h3>
+    <div class="q-item"><label class="q-label">Possui acompanhante?</label>
+      <div class="pill-group">${radio('acomp','Sim','cond-acomp')}${radio('acomp','Não','cond-acomp')}</div></div>
+    <div class="cond-block" id="cond-acomp">
+      <div class="q-item"><label class="q-label">Acompanhante orientado sobre utilização da campainha?</label>
+        <div class="pill-group">${radioColor('acomp_camp','Sim','green')}${radioColor('acomp_camp','Não','red')}</div></div>
+      <div class="q-item"><label class="q-label">Acompanhante orientado a solicitar auxílio antes de retirar o paciente do leito?</label>
+        <div class="pill-group">${radioColor('acomp_aux','Sim','green')}${radioColor('acomp_aux','Não','red')}</div></div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Protocolo de Queda</h3>
+    <div class="q-item"><label class="q-label">Protocolo de prevenção de queda orientado?</label>
+      <div class="pill-group">${radioColor('prot_queda','Sim','green')}${radioColor('prot_queda','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Paciente compreendeu as orientações?</label>
+      <div class="pill-group">${radioColor('compreendeu','Sim','green')}${radioColor('compreendeu','Não','red')}${radio('compreendeu','Não foi possível avaliar')}</div></div>
+  </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+// STEP 2 — Estado Geral
+// ─────────────────────────────────────
+function buildStep2() {
+  return `<div class="step-body">
+  <div class="step-title"><span>❤️</span> Estado Geral e Sinais Vitais</div>
+
+  <div class="q-group">
+    <h3>Nível de Consciência</h3>
+    <div class="q-item"><div class="pill-group">
+      ${radio('nc','Consciente, comunicando-se com coerência')}
+      ${radio('nc','Consciente, porém confuso')}
+      ${radio('nc','Sonolento, respondendo a estímulos verbais')}
+      ${radio('nc','Apresentando agitação psicomotora')}
+      ${radio('nc','Não responsivo a estímulos verbais')}
+    </div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Sinais Vitais</h3>
+    <div class="q-item"><label class="q-label">PA (mmHg)</label>
+      <input class="text-input" id="sv_pa" placeholder="Ex: 120x80" style="max-width:200px"></div>
+    <div class="q-item"><label class="q-label">FC (bpm)</label>
+      <input class="text-input" id="sv_fc" placeholder="Ex: 80" style="max-width:120px"></div>
+    <div class="q-item"><label class="q-label">FR (irpm)</label>
+      <input class="text-input" id="sv_fr" placeholder="Ex: 18" style="max-width:120px"></div>
+    <div class="q-item"><label class="q-label">Temperatura (°C)</label>
+      <input class="text-input" id="sv_temp" placeholder="Ex: 36.5" style="max-width:120px"></div>
+    <div class="q-item"><label class="q-label">Saturação (%)</label>
+      <input class="text-input" id="sv_sat" placeholder="Ex: 98" style="max-width:120px"></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Dor</h3>
+    <div class="q-item"><label class="q-label">Dor presente?</label>
+      <div class="pill-group">${radio('dor','Sim','cond-dor')}${radio('dor','Não','cond-dor')}</div></div>
+    <div class="cond-block" id="cond-dor">
+      <div class="q-item"><label class="q-label">Local da dor</label>
+        <input class="text-input" id="dor_local" placeholder="Localização"></div>
+      <div class="q-item"><label class="q-label">Intensidade (0–10)</label>
+        <input class="text-input" id="dor_escala" placeholder="0 a 10" type="number" min="0" max="10" style="max-width:100px"></div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>HGT</h3>
+    <div class="q-item"><label class="q-label">HGT realizado?</label>
+      <div class="pill-group">${radio('hgt','Sim','cond-hgt')}${radio('hgt','Não','cond-hgt')}</div></div>
+    <div class="cond-block" id="cond-hgt">
+      <div class="q-item"><label class="q-label">Valor (mg/dL)</label>
+        <input class="text-input" id="hgt_valor" placeholder="Valor" style="max-width:120px"></div>
+    </div>
+  </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+// STEP 3 — Dispositivos
+// ─────────────────────────────────────
+function buildStep3() {
+  return `<div class="step-body">
+  <div class="step-title"><span>🩺</span> Dispositivos</div>
+
+  <div class="q-group">
+    <h3>Acesso Venoso</h3>
+    <div class="q-item"><label class="q-label">Possui acesso venoso?</label>
+      <div class="pill-group">${radio('av','Sim','cond-av')}${radio('av','Não','cond-av')}</div></div>
+    <div class="cond-block" id="cond-av">
+      <div class="q-item"><label class="q-label">Tipo</label>
+        <div class="pill-group">${radio('av_tipo','AVP')}${radio('av_tipo','CVC')}${radio('av_tipo','PICC')}</div></div>
+      <div class="input-row" style="margin-bottom:10px">
+        <div><label class="q-label">Local</label><input class="text-input" id="av_local" placeholder="MSD, MSE…"></div>
+        <div><label class="q-label">Calibre</label><input class="text-input" id="av_calibre" placeholder="Ex: 20G"></div>
+      </div>
+      <div class="input-row" style="margin-bottom:10px">
+        <div><label class="q-label">Data da punção</label><input class="text-input" id="av_data_puncao" type="date"></div>
+        <div><label class="q-label">Data do curativo</label><input class="text-input" id="av_data_curativo" type="date"></div>
+        <div><label class="q-label">Data troca equipo</label><input class="text-input" id="av_data_equipo" type="date"></div>
+      </div>
+      <div class="q-item"><label class="q-label">Pérvio?</label>
+        <div class="pill-group">${radioColor('av_pervio','Sim','green')}${radioColor('av_pervio','Não','red')}</div></div>
+
+      <div class="q-item"><label class="q-label">Status atual</label>
+        <div class="pill-group">
+          ${radio('av_status','Salinizado','cond-av-status')}
+          ${radio('av_status','Em Soroterapia','cond-av-status')}
+        </div>
+      </div>
+      <div class="cond-block" id="cond-av-status">
+        <div id="av-status-soro-fields">
+          <div class="q-item"><label class="q-label">Solução infundindo</label>
+            <input class="text-input" id="av_solucao" placeholder="Ex: SF 0,9%, SG 5%, Ringer lactato…"></div>
+          <div class="input-row" style="margin-top:8px">
+            <div><label class="q-label">Volume (mL)</label>
+              <input class="text-input" id="av_volume" placeholder="Ex: 500" style="max-width:110px"></div>
+            <div><label class="q-label">Velocidade de infusão</label>
+              <div class="pill-group" style="margin-top:6px">
+                ${radio('av_vel_tipo','Gotejamento (gtts/min)')}
+                ${radio('av_vel_tipo','BIC (mL/h)')}
+              </div>
+            </div>
+          </div>
+          <div class="input-row" style="margin-top:8px">
+            <div><label class="q-label">Valor</label>
+              <input class="text-input" id="av_vel_valor" placeholder="Ex: 30" style="max-width:100px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="q-item"><label class="q-label">Sinais flogísticos (dor / calor / rubor)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:6px;">
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Dor</div>
+            <div class="pill-group">${radioColor('av_dor','Sim','red')}${radioColor('av_dor','Não','green')}</div></div>
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Calor</div>
+            <div class="pill-group">${radioColor('av_calor','Sim','red')}${radioColor('av_calor','Não','green')}</div></div>
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Rubor</div>
+            <div class="pill-group">${radioColor('av_rubor','Sim','red')}${radioColor('av_rubor','Não','green')}</div></div>
+        </div>
+      </div>
+      <div class="q-item"><label class="q-label">Curativo</label>
+        <div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:6px;">
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Limpo</div>
+            <div class="pill-group">${radioColor('curativo_limpo','Sim','green')}${radioColor('curativo_limpo','Não','red')}</div></div>
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Seco</div>
+            <div class="pill-group">${radioColor('curativo_seco','Sim','green')}${radioColor('curativo_seco','Não','red')}</div></div>
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Íntegro</div>
+            <div class="pill-group">${radioColor('curativo_integro','Sim','green')}${radioColor('curativo_integro','Não','red')}</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Oxigenoterapia</h3>
+    <div class="q-item"><label class="q-label">Em uso?</label>
+      <div class="pill-group">${radio('o2','Sim','cond-o2')}${radio('o2','Não','cond-o2')}</div></div>
+    <div class="cond-block" id="cond-o2">
+      <div class="q-item"><label class="q-label">Dispositivo</label>
+        <div class="pill-group">
+          ${radio('o2_disp','Cateter nasal')}${radio('o2_disp','Máscara simples')}
+          ${radio('o2_disp','Venturi')}${radio('o2_disp','Reservatório')}
+        </div></div>
+      <div class="q-item"><label class="q-label">Fluxo (L/min)</label>
+        <input class="text-input" id="o2_fluxo" placeholder="Ex: 2" style="max-width:100px"></div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Sondas</h3>
+    <div class="q-item"><label class="q-label">Possui sonda?</label>
+      <div class="pill-group">${radio('sonda','Sim','cond-sonda')}${radio('sonda','Não','cond-sonda')}</div></div>
+    <div class="cond-block" id="cond-sonda">
+      <div class="q-item"><label class="q-label">Tipo</label>
+        <div class="pill-group">${radio('sonda_tipo','SVD')}${radio('sonda_tipo','SNE')}${radio('sonda_tipo','SNG')}</div></div>
+      <div class="q-item"><label class="q-label">Data da passagem</label>
+        <input class="text-input" id="sonda_data" type="date" style="max-width:180px"></div>
+      <div class="q-item"><label class="q-label">Fixação adequada?</label>
+        <div class="pill-group">${radioColor('sonda_fix','Sim','green')}${radioColor('sonda_fix','Não','red')}</div></div>
+      <div class="q-item"><label class="q-label">Sem tração?</label>
+        <div class="pill-group">${radioColor('sonda_tracao','Sim','green')}${radioColor('sonda_tracao','Não','red')}</div></div>
+      <div class="input-row">
+        <div><label class="q-label">Débito</label><input class="text-input" id="sonda_debito" placeholder="mL"></div>
+        <div><label class="q-label">Aspecto</label><input class="text-input" id="sonda_aspecto" placeholder="Aspecto"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Drenos</h3>
+    <div class="q-item"><label class="q-label">Possui dreno?</label>
+      <div class="pill-group">${radio('dreno','Sim','cond-dreno')}${radio('dreno','Não','cond-dreno')}</div></div>
+    <div class="cond-block" id="cond-dreno">
+      <div class="input-row">
+        <div><label class="q-label">Tipo</label><input class="text-input" id="dreno_tipo" placeholder="Tipo de dreno"></div>
+        <div><label class="q-label">Local</label><input class="text-input" id="dreno_local" placeholder="Localização"></div>
+      </div>
+      <div class="input-row" style="margin-top:10px">
+        <div><label class="q-label">Volume</label><input class="text-input" id="dreno_vol" placeholder="mL"></div>
+        <div><label class="q-label">Aspecto da secreção</label><input class="text-input" id="dreno_aspecto" placeholder="Aspecto"></div>
+      </div>
+    </div>
+  </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+// STEP 4 — Pele e Eliminações
+// ─────────────────────────────────────
+function buildStep4() {
+  return `<div class="step-body">
+  <div class="step-title"><span>🩹</span> Pele, Dieta e Eliminações</div>
+
+  <div class="q-group">
+    <h3>Integridade da Pele</h3>
+    <div class="q-item"><label class="q-label">Integridade</label>
+      <div class="pill-group">${radioColor('pele_int','Íntegra','green')}${radioColor('pele_int','Alterada','red')}</div></div>
+    <div class="q-item"><label class="q-label">Edema?</label>
+      <div class="pill-group">${radio('edema','Sim','cond-edema')}${radio('edema','Não','cond-edema')}</div></div>
+    <div class="cond-block" id="cond-edema">
+      <div class="q-item"><label class="q-label">Local / Grau</label>
+        <input class="text-input" id="edema_desc" placeholder="Ex: MMII +2/+4"></div>
+    </div>
+    <div class="q-item"><label class="q-label">Hiperemia?</label>
+      <div class="pill-group">${radio('hiper','Sim','cond-hiper')}${radio('hiper','Não','cond-hiper')}</div></div>
+    <div class="cond-block" id="cond-hiper">
+      <div class="q-item"><label class="q-label">Local</label>
+        <input class="text-input" id="hiper_local" placeholder="Localização"></div>
+    </div>
+    <div class="q-item"><label class="q-label">LPP (Lesão por Pressão)?</label>
+      <div class="pill-group">${radio('lpp','Sim','cond-lpp')}${radio('lpp','Não','cond-lpp')}</div></div>
+    <div class="cond-block" id="cond-lpp">
+      <div class="input-row">
+        <div><label class="q-label">Local</label><input class="text-input" id="lpp_local" placeholder="Localização"></div>
+        <div><label class="q-label">Estágio</label><input class="text-input" id="lpp_estagio" placeholder="1,2,3,4…"></div>
+      </div>
+      <div class="input-row" style="margin-top:10px">
+        <div><label class="q-label">Cobertura</label><input class="text-input" id="lpp_cobertura" placeholder="Cobertura utilizada"></div>
+        <div><label class="q-label">Exsudato</label><input class="text-input" id="lpp_exsudato" placeholder="Aspecto e quantidade"></div>
+      </div>
+    </div>
+    <div class="q-item"><label class="q-label">Outras lesões?</label>
+      <div class="pill-group">${radio('outras_lesoes','Sim','cond-outras-lesoes')}${radio('outras_lesoes','Não','cond-outras-lesoes')}</div></div>
+    <div class="cond-block" id="cond-outras-lesoes">
+      <div class="q-item"><label class="q-label">Descrição</label>
+        <textarea class="text-input" id="outras_lesoes_desc" placeholder="Descreva as lesões"></textarea></div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Dieta</h3>
+    <div class="q-item"><label class="q-label">Tipo</label>
+      <div class="pill-group">
+        ${radio('dieta_tipo','Livre')}${radio('dieta_tipo','Branda')}${radio('dieta_tipo','Pastosa')}
+        ${radio('dieta_tipo','Enteral')}${radio('dieta_tipo','Jejum')}
+      </div></div>
+    <div class="q-item"><label class="q-label">Aceitação</label>
+      <div class="pill-group">${radioColor('dieta_aceit','Boa','green')}${radioColor('dieta_aceit','Regular','')}${radioColor('dieta_aceit','Ruim','red')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Diurese</h3>
+    <div class="q-item"><label class="q-label">Origem da informação</label>
+      <div class="pill-group">
+        ${radio('diurese_origem','Observada por mim')}${radio('diurese_origem','Relatada pelo paciente')}
+        ${radio('diurese_origem','Relatada pelo acompanhante')}${radio('diurese_origem','Não houve','cond-diurese-nao')}
+      </div></div>
+    <div class="cond-block" id="cond-diurese-nao" style="display:none"></div>
+    <div id="cond-diurese-dados">
+      <div class="input-row" style="margin-top:10px">
+        <div><label class="q-label">Quantidade</label><input class="text-input" id="diurese_qtd" placeholder="mL ou estimativa"></div>
+        <div><label class="q-label">Aspecto</label><input class="text-input" id="diurese_aspecto" placeholder="Cor, odor…"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Evacuação</h3>
+    <div class="q-item"><label class="q-label">Origem da informação</label>
+      <div class="pill-group">
+        ${radio('evac_origem','Observada por mim')}${radio('evac_origem','Relatada pelo paciente')}
+        ${radio('evac_origem','Relatada pelo acompanhante')}${radio('evac_origem','Não houve')}
+      </div></div>
+    <div class="q-item"><label class="q-label">Consistência</label>
+      <div class="pill-group">${radio('evac_consist','Formada')}${radio('evac_consist','Pastosa')}${radio('evac_consist','Líquida')}</div></div>
+    <div class="q-item"><label class="q-label">Quantidade / Observações</label>
+      <input class="text-input" id="evac_qtd" placeholder="Quantidade e aspecto"></div>
+  </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+// STEP 5 — Intercorrências
+// ─────────────────────────────────────
+function buildStep5() {
+  const tipos = ['Queda','Hipertensão','Hipotensão','Náusea','Vômito','Dor',
+                 'Hipoglicemia','Hiperglicemia','Recusa de medicação','Recusa alimentar','Outra'];
+  const checkboxes = tipos.map(t => checkboxInput('intercorr_tipo', t)).join('');
+  return `<div class="step-body">
+  <div class="step-title"><span>⚠️</span> Intercorrências</div>
+
+  <div class="q-group">
+    <div class="q-item"><label class="q-label">Houve intercorrências?</label>
+      <div class="pill-group">${radio('intercorr','Sim','cond-intercorr')}${radio('intercorr','Não','cond-intercorr')}</div></div>
+    <div class="cond-block" id="cond-intercorr">
+      <div class="q-item"><label class="q-label">Tipo(s)</label>
+        <div class="pill-group" style="margin-bottom:12px">${checkboxes}</div></div>
+      <div class="q-item"><label class="q-label">Descrição</label>
+        <textarea class="text-input" id="intercorr_desc" placeholder="Descreva a(s) intercorrência(s), condutas e desfecho…" rows="4"></textarea></div>
+    </div>
+  </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────
+function radio(name, value, condId) {
+  const uid = 'r_' + name + '_' + value.replace(/\s+/g,'_');
+  const condAttr = condId ? `data-cond="${condId}"` : '';
+  return `<input type="radio" name="${name}" id="${uid}" value="${value}" ${condAttr}><label for="${uid}">${value}</label>`;
+}
+
+function radioColor(name, value, color) {
+  const uid = 'r_' + name + '_' + value.replace(/\s+/g,'_');
+  const cls = color ? `pill-${color}` : '';
+  return `<input type="radio" name="${name}" id="${uid}" value="${value}" class="${cls}"><label for="${uid}">${value}</label>`;
+}
+
+function checkboxInput(name, value) {
+  const uid = 'cb_' + name + '_' + value.replace(/\s+/g,'_');
+  return `<input type="checkbox" name="${name}" id="${uid}" value="${value}"><label for="${uid}">${value}</label>`;
+}
+
+function bindConditionals() {
+  const container = document.getElementById('adm-step-content');
+  if (!container) return;
+  const pairs = {
+    'acomp': 'cond-acomp', 'dor': 'cond-dor', 'hgt': 'cond-hgt',
+    'av': 'cond-av', 'av_status': 'cond-av-status', 'o2': 'cond-o2', 'sonda': 'cond-sonda',
+    'dreno': 'cond-dreno', 'edema': 'cond-edema', 'hiper': 'cond-hiper',
+    'lpp': 'cond-lpp', 'outras_lesoes': 'cond-outras-lesoes', 'intercorr': 'cond-intercorr',
+  };
+  Object.entries(pairs).forEach(([name, condId]) => {
+    container.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
+      inp.addEventListener('change', () => updateConditionals());
+    });
+  });
+  updateConditionals();
+}
+
+function updateConditionals() {
+  const container = document.getElementById('adm-step-content');
+  if (!container) return;
+  const pairs = {
+    'acomp': 'cond-acomp', 'dor': 'cond-dor', 'hgt': 'cond-hgt',
+    'av': 'cond-av', 'av_status': 'cond-av-status', 'o2': 'cond-o2', 'sonda': 'cond-sonda',
+    'dreno': 'cond-dreno', 'edema': 'cond-edema', 'hiper': 'cond-hiper',
+    'lpp': 'cond-lpp', 'outras_lesoes': 'cond-outras-lesoes', 'intercorr': 'cond-intercorr',
+  };
+  Object.entries(pairs).forEach(([name, condId]) => {
+    const val = container.querySelector(`input[name="${name}"]:checked`)?.value;
+    const el = container.querySelector(`#${condId}`);
+    if (el) {
+      if (name === 'av_status') {
+        // show for both options (Salinizado and Em Soroterapia)
+        const soroFields = el.querySelector('#av-status-soro-fields');
+        el.classList.toggle('visible', !!val);
+        if (soroFields) soroFields.style.display = val === 'Em Soroterapia' ? 'block' : 'none';
+      } else {
+        el.classList.toggle('visible', val === 'Sim');
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────
+// SAVE / RESTORE STATE
+// ─────────────────────────────────────
+function coletarRespostas(step) {
+  const container = document.getElementById('adm-step-content');
+  if (!container) return;
+
+  // radios
+  container.querySelectorAll('input[type="radio"]').forEach(inp => {
+    if (inp.checked) admAnswers[inp.name] = inp.value;
+  });
+
+  // checkboxes
+  const cbGroups = {};
+  container.querySelectorAll('input[type="checkbox"]').forEach(inp => {
+    if (!cbGroups[inp.name]) cbGroups[inp.name] = [];
+    if (inp.checked) cbGroups[inp.name].push(inp.value);
+  });
+  Object.assign(admAnswers, cbGroups);
+
+  // ALL text-like inputs and textareas
+  container.querySelectorAll('input, textarea').forEach(inp => {
+    if (inp.type === 'radio' || inp.type === 'checkbox') return;
+    if (inp.id) admAnswers[inp.id] = inp.value;
+  });
+}
+
+function restaurarRespostas(step) {
+  const container = document.getElementById('adm-step-content');
+  if (!container) return;
+  const a = admAnswers;
+  Object.entries(a).forEach(([key, val]) => {
+    if (Array.isArray(val)) {
+      val.forEach(v => {
+        const el = container.querySelector(`input[name="${key}"][value="${v}"]`);
+        if (el) el.checked = true;
+      });
+    } else {
+      const radio = container.querySelector(`input[type="radio"][name="${key}"][value="${val}"]`);
+      if (radio) { radio.checked = true; return; }
+      const inp = container.querySelector(`#${key}`);
+      if (inp) inp.value = val;
+    }
+  });
+  updateConditionals();
+}
+
+// ─────────────────────────────────────
+// SUMMARY GENERATION
+// ─────────────────────────────────────
+function gerarResumo() {
+  const allA = admAnswers;
+  const p = pacientes[currentPatientId];
+  const get = k => allA[k] || '';
+  const getArr = k => Array.isArray(allA[k]) ? allA[k] : (allA[k] ? [allA[k]] : []);
+
+  let txt = '';
+
+  // Como encontrado
+  txt += `Paciente encontrado ${(get('enc') || 'sem informação').toLowerCase()}`;
+
+  // Consciência
+  if (get('nc')) txt += `, ${get('nc').toLowerCase()}`;
+
+  txt += '. ';
+
+  // Pulseiras
+  const pId = get('puls_presente') === 'Sim'
+    ? `Pulseira de identificação presente${get('puls_legivel') === 'Sim' ? ' e legível' : ', ilegível'}`
+    : 'Pulseira de identificação ausente';
+  txt += pId + '. ';
+
+  if (get('puls_queda') !== 'Não se aplica' && get('puls_queda')) {
+    txt += `Pulseira de risco de queda ${get('puls_queda') === 'Sim' ? 'presente' : 'ausente'}. `;
+  }
+  if (get('puls_alergia') !== 'Não se aplica' && get('puls_alergia')) {
+    txt += `Pulseira de alergia ${get('puls_alergia') === 'Sim' ? 'presente' : 'ausente'}. `;
+  }
+
+  // Segurança do leito
+  const segItems = [];
+  if (get('cama_baixa') === 'Sim') segItems.push('cama em posição baixa');
+  if (get('rodas') === 'Sim') segItems.push('rodas travadas');
+  if (get('grades') === 'Sim') segItems.push('grades elevadas');
+  if (segItems.length) txt += `Leito em segurança: ${segItems.join(', ')}. `;
+
+  // Campainha e orientações
+  const oriItems = [];
+  if (get('camp_local') === 'Sim') oriItems.push('localizada');
+  if (get('camp_testada') === 'Sim') oriItems.push('testada');
+  if (oriItems.length) txt += `Campainha ${oriItems.join(' e ')}. `;
+  if (get('camp_ori') === 'Sim') txt += 'Paciente orientado sobre uso da campainha. ';
+  if (get('nao_levantar') === 'Sim') txt += 'Orientado a não levantar do leito sem auxílio. ';
+  if (get('prot_queda') === 'Sim') txt += 'Protocolo de prevenção de queda orientado. ';
+  if (get('compreendeu')) txt += `Paciente ${get('compreendeu') === 'Sim' ? 'compreendeu as orientações' : get('compreendeu') === 'Não' ? 'não compreendeu as orientações' : 'não foi possível avaliar compreensão'}. `;
+
+  // Acompanhante
+  if (get('acomp') === 'Sim') {
+    txt += 'Acompanhante presente';
+    const aoriItems = [];
+    if (get('acomp_camp') === 'Sim') aoriItems.push('orientado sobre campainha');
+    if (get('acomp_aux') === 'Sim') aoriItems.push('orientado a acionar equipe antes da deambulação');
+    if (aoriItems.length) txt += `, ${aoriItems.join(' e ')}`;
+    txt += '. ';
+  }
+
+  // SSVV
+  const sv = [];
+  if (get('sv_pa')) sv.push(`PA: ${get('sv_pa')} mmHg`);
+  if (get('sv_fc')) sv.push(`FC: ${get('sv_fc')} bpm`);
+  if (get('sv_fr')) sv.push(`FR: ${get('sv_fr')} irpm`);
+  if (get('sv_temp')) sv.push(`Tax: ${get('sv_temp')}°C`);
+  if (get('sv_sat')) sv.push(`Sat: ${get('sv_sat')}%`);
+  if (sv.length) txt += `SSVV — ${sv.join(' | ')}. `;
+
+  // Dor
+  if (get('dor') === 'Sim') {
+    txt += `Refere dor`;
+    if (get('dor_local')) txt += ` em ${get('dor_local')}`;
+    if (get('dor_escala')) txt += `, intensidade ${get('dor_escala')}/10`;
+    txt += '. ';
+  } else if (get('dor') === 'Não') {
+    txt += 'Sem queixa álgica no momento. ';
+  }
+
+  // HGT
+  if (get('hgt') === 'Sim' && get('hgt_valor')) {
+    txt += `HGT: ${get('hgt_valor')} mg/dL. `;
+  } else if (get('hgt') === 'Não') {
+    txt += 'HGT não realizado. ';
+  }
+
+  // Acesso venoso
+  if (get('av') === 'Sim') {
+    txt += `${get('av_tipo') || 'Acesso venoso'}`;
+    if (get('av_local')) txt += ` em ${get('av_local')}`;
+    if (get('av_calibre')) txt += `, calibre ${get('av_calibre')}`;
+    if (get('av_data_puncao')) txt += `, puncionado em ${formatDate(get('av_data_puncao'))}`;
+    txt += get('av_pervio') === 'Sim' ? ', pérvio' : ', sem pérvio';
+    // status: salinizado ou soroterapia
+    if (get('av_status') === 'Salinizado') {
+      txt += ', salinizado';
+    } else if (get('av_status') === 'Em Soroterapia') {
+      txt += ', em soroterapia';
+      if (get('av_solucao')) txt += ` com ${get('av_solucao')}`;
+      if (get('av_volume')) txt += `, ${get('av_volume')} mL`;
+      if (get('av_vel_valor') && get('av_vel_tipo')) {
+        const unidade = get('av_vel_tipo') === 'BIC (mL/h)' ? 'mL/h em BIC' : 'gtts/min';
+        txt += `, a ${get('av_vel_valor')} ${unidade}`;
+      }
+    }
+    const flog = [];
+    if (get('av_dor') === 'Não' && get('av_calor') === 'Não' && get('av_rubor') === 'Não') {
+      flog.push('sem sinais flogísticos');
+    } else {
+      if (get('av_dor') === 'Sim') flog.push('dor');
+      if (get('av_calor') === 'Sim') flog.push('calor');
+      if (get('av_rubor') === 'Sim') flog.push('rubor');
+      if (flog.length) txt += `, com ${flog.join(', ')}`;
+    }
+    if (flog.length === 1 && flog[0] === 'sem sinais flogísticos') txt += ', sem sinais flogísticos';
+    const curativo = [];
+    if (get('curativo_limpo') === 'Sim') curativo.push('limpo');
+    if (get('curativo_seco') === 'Sim') curativo.push('seco');
+    if (get('curativo_integro') === 'Sim') curativo.push('íntegro');
+    if (curativo.length) txt += `, curativo ${curativo.join(', ')}`;
+    if (get('av_data_curativo')) txt += `, curativo realizado em ${formatDate(get('av_data_curativo'))}`;
+    if (get('av_data_equipo')) txt += `, equipo trocado em ${formatDate(get('av_data_equipo'))}`;
+    txt += '. ';
+  } else if (get('av') === 'Não') {
+    txt += 'Sem acesso venoso. ';
+  }
+
+  // O2
+  if (get('o2') === 'Sim') {
+    txt += `Em oxigenoterapia com ${get('o2_disp') || 'dispositivo não informado'}`;
+    if (get('o2_fluxo')) txt += ` a ${get('o2_fluxo')} L/min`;
+    txt += '. ';
+  }
+
+  // Sonda
+  if (get('sonda') === 'Sim') {
+    txt += `${get('sonda_tipo') || 'Sonda'} instalada`;
+    if (get('sonda_data')) txt += ` em ${formatDate(get('sonda_data'))}`;
+    if (get('sonda_fix') === 'Sim') txt += ', com fixação adequada';
+    if (get('sonda_tracao') === 'Sim') txt += ', sem tração';
+    if (get('sonda_debito')) txt += `, débito de ${get('sonda_debito')} mL`;
+    if (get('sonda_aspecto')) txt += ` (${get('sonda_aspecto')})`;
+    txt += '. ';
+  }
+
+  // Dreno
+  if (get('dreno') === 'Sim') {
+    txt += `Dreno ${get('dreno_tipo') || ''}`;
+    if (get('dreno_local')) txt += ` em ${get('dreno_local')}`;
+    if (get('dreno_vol')) txt += `, volume de ${get('dreno_vol')} mL`;
+    if (get('dreno_aspecto')) txt += ` (${get('dreno_aspecto')})`;
+    txt += '. ';
+  }
+
+  // Pele
+  txt += `Pele ${(get('pele_int') || 'sem registro').toLowerCase()}`;
+  if (get('edema') === 'Sim') txt += `, com edema${get('edema_desc') ? ' ' + get('edema_desc') : ''}`;
+  else txt += ', sem edema';
+  if (get('hiper') === 'Sim') txt += `, com hiperemia${get('hiper_local') ? ' em ' + get('hiper_local') : ''}`;
+  if (get('lpp') === 'Sim') {
+    txt += `. LPP`;
+    if (get('lpp_local')) txt += ` em ${get('lpp_local')}`;
+    if (get('lpp_estagio')) txt += `, estágio ${get('lpp_estagio')}`;
+    if (get('lpp_cobertura')) txt += `, cobertura ${get('lpp_cobertura')}`;
+    if (get('lpp_exsudato')) txt += `, exsudato ${get('lpp_exsudato')}`;
+  }
+  if (get('outras_lesoes') === 'Sim' && get('outras_lesoes_desc')) {
+    txt += `. Outras lesões: ${get('outras_lesoes_desc')}`;
+  }
+  txt += '. ';
+
+  // Dieta
+  if (get('dieta_tipo')) {
+    txt += `Dieta ${get('dieta_tipo').toLowerCase()}`;
+    if (get('dieta_aceit')) txt += ` com ${get('dieta_aceit').toLowerCase()} aceitação`;
+    txt += '. ';
+  }
+
+  // Diurese
+  if (get('diurese_origem') === 'Não houve') {
+    txt += 'Sem diurese no período. ';
+  } else if (get('diurese_origem')) {
+    txt += `Diurese ${get('diurese_origem').toLowerCase()}`;
+    if (get('diurese_qtd')) txt += `, ${get('diurese_qtd')} mL`;
+    if (get('diurese_aspecto')) txt += `, aspecto ${get('diurese_aspecto')}`;
+    txt += '. ';
+  }
+
+  // Evacuação
+  if (get('evac_origem') === 'Não houve') {
+    txt += 'Sem evacuação no período. ';
+  } else if (get('evac_origem')) {
+    txt += `Evacuação ${get('evac_origem').toLowerCase()}`;
+    if (get('evac_consist')) txt += `, consistência ${get('evac_consist').toLowerCase()}`;
+    if (get('evac_qtd')) txt += `. ${get('evac_qtd')}`;
+    txt += '. ';
+  }
+
+  // Intercorrências
+  if (get('intercorr') === 'Não') {
+    txt += 'Sem intercorrências no período.';
+  } else if (get('intercorr') === 'Sim') {
+    const tipos = getArr('intercorr_tipo');
+    txt += `Intercorrência(s): ${tipos.join(', ') || 'não especificado'}. `;
+    if (get('intercorr_desc')) txt += get('intercorr_desc');
+  }
+
+  // show result
+  document.getElementById('result-title').textContent = `${p.leito} — ${p.nome}`;
+  document.getElementById('result-text').textContent = txt.trim();
+  showScreen('result');
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function copiarResumo() {
+  const t = document.getElementById('result-text').textContent;
+  navigator.clipboard.writeText(t).then(() => alert('Resumo copiado!')).catch(() => {
+    prompt('Copie o texto abaixo:', t);
+  });
+}
+
+function copiarTexto(t) {
+  navigator.clipboard.writeText(t).then(() => alert('Copiado!')).catch(() => {
+    prompt('Copie o texto abaixo:', t);
+  });
+}
+
+function finalizarAdmissao() {
+  const txt = document.getElementById('result-text').textContent;
+  pacientes[currentPatientId].admissaoFeita = true;
+  pacientes[currentPatientId].admissaoTexto = txt;
+  salvarLS();
+  showScreen('home');
+  renderPacientes();
+}
+
+function escapeBacktick(s) {
+  return (s || '').replace(/`/g, '\\`').replace(/\$/g,'\\$');
+}
+
+function escapeHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggleCollapse(id, e) {
+  const card = document.getElementById('card-' + id);
+  if (!card) return;
+  const isCollapsed = card.classList.toggle('collapsed');
+  const btn = document.getElementById('collapse-btn-' + id);
+  if (btn) btn.textContent = isCollapsed ? '+' : '−';
+}
+
+function toggleMenu(id, e) {
+  e.stopPropagation();
+  // close all others first
+  document.querySelectorAll('.menu-dropdown.open').forEach(m => {
+    if (m.id !== 'menu-' + id) m.classList.remove('open');
+  });
+  document.getElementById('menu-' + id)?.classList.toggle('open');
+}
+
+function closeMenu(id) {
+  document.getElementById('menu-' + id)?.classList.remove('open');
+}
+
+// close menus on outside click
+document.addEventListener('click', () => {
+  document.querySelectorAll('.menu-dropdown.open').forEach(m => m.classList.remove('open'));
+});
+
+// init
+carregarLS();
+renderPacientes();
+</script>
+
+<script>
+  (()=>{
+    'use strict';
+
+    const canvas = document.getElementById('ascii-bg');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d', {alpha:false});
+    const DPR = Math.min(window.devicePixelRatio||1, 2);
+
+    /* ── paleta outono fixa ── */
+    const S = {
+      water_sh: ['#5a4a3a','#6a5a48','#7a6a55','#8a7a65'],
+      water_dp: ['#3a4a5a','#4a5a6a','#5a6070'],
+      shore:    ['#6a4a2a','#7a5a38','#8a6a45','#9a7a55'],
+      land:     ['#3a2818','#4a3820','#5a4828','#6a5835','#7a6840','#8a7850'],
+      green:    ['#6a4020','#7a5028','#8a6035'],
+      flower:   ['#d84020','#e05030','#c85028','#b04020'],
+      dot:      ['#3a2818','#442e20','#503828'],
+      bgBase:   '#080604',
+      particle: '#8a6a4a',
+    };
+
+    /* ── zonas ── */
+    const LAND=0,SHORE_OUTER=1,SHORE_INNER=2,WATER_SHALLOW=3,WATER_DEEP=4,WATER_DEEPEST=5;
+    const ZC = {
+      0:[' ',' ',' ',' ','.','.','.','"','"',',','·'],
+      1:[' ',' ',' ','.','.','"',',','♣'],
+      2:['|','|','¦',';',' ','♠'],
+      3:[' ',' ','~','~','·'],
+      4:[' ',' ',' ','~','·'],
+      5:[' ',' ',' ','·']
+    };
+    const WCHARS = ['·','∘','~','∿','≈'];
+    const FCHARS = ['·','*','✿','❀'];
+    const WZ = [WATER_SHALLOW,WATER_DEEP,WATER_DEEPEST];
+
+    /* ── dimensões ── */
+    const FONT_PX = 14*DPR;
+    const CHAR_W  = (25/3)*DPR;
+    const LINE_H  = (67/3)*DPR;
+    const TILE_ROWS = 160;
+    let cW, cH, COLS, VISIBLE_ROWS;
+
+    function resize(){
+      cW = window.innerWidth; cH = window.innerHeight;
+      canvas.width  = Math.round(cW*DPR); canvas.height = Math.round(cH*DPR);
+      canvas.style.width  = cW+'px'; canvas.style.height = cH+'px';
+      COLS = Math.ceil(canvas.width/CHAR_W)+2;
+      VISIBLE_ROWS = Math.ceil(canvas.height/LINE_H)+2;
+    }
+    resize();
+
+    /* ── noise Perlin ── */
+    function fade(t){return t*t*t*(t*(6*t-15)+10);}
+    function grad(h,x,y){const a=3&h,r=a<2?x:y,i=a<2?y:x;return((1&a)?-r:r)+((2&a)?-i:i);}
+    const perm=(function(seed){let p=[];for(let i=0;i<256;i++)p[i]=i;let s=seed;for(let i=255;i>0;i--){s=(s*16807)%2147483647;const j=s%(i+1);[p[i],p[j]]=[p[j],p[i]];}return[...p,...p];})(42);
+    function snoise(x,y){
+      const xi=Math.floor(x)&255,yi=Math.floor(y)&255;
+      const xf=x-Math.floor(x),yf=y-Math.floor(y);
+      const u=fade(xf),v=fade(yf);
+      const aa=perm[perm[xi]+yi],ab=perm[perm[xi]+yi+1],ba=perm[perm[xi+1]+yi],bb=perm[perm[xi+1]+yi+1];
+      const r1=grad(aa,xf,yf)+(grad(ba,xf-1,yf)-grad(aa,xf,yf))*u;
+      const r2=grad(ab,xf,yf-1)+(grad(bb,xf-1,yf-1)-grad(ab,xf,yf-1))*u;
+      return r1+(r2-r1)*v;
+    }
+
+    /* ── RNG determinístico ── */
+    let rngS=42;
+    function rng(){rngS=(rngS*16807)%2147483647;return rngS/2147483647;}
+
+    /* ── color helpers ── */
+    function pickColor(arr,lp){return arr[Math.min(Math.floor(lp*arr.length),arr.length-1)];}
+    function colorFor(zone,ch,lp){
+      if('~·∘∿≈'.includes(ch)){
+        if(zone===WATER_SHALLOW) return pickColor(S.water_sh,lp);
+        return pickColor(S.water_dp,lp);
+      }
+      if('❀✿*'.includes(ch)) return pickColor(S.flower,lp);
+      if('"'===ch||','===ch||"'"===ch||';'===ch||'`'===ch) return pickColor(S.land,lp);
+      if('|'===ch||'¦'===ch) return pickColor(S.shore,lp);
+      if('♣'===ch||'♠'===ch) return pickColor(S.green,lp);
+      if('·'===ch) return pickColor(S.flower,lp);
+      if('.'===ch) return pickColor(S.dot,lp);
+      if('/'===ch||'\\'===ch) return pickColor(S.green,lp);
+      return '#505050';
+    }
+
+    /* ── tile ── */
+    let TILE=[], RDATA=[];
+    function buildTile(){
+      TILE=[]; RDATA=[];
+      const seed=42;
+      const minW=Math.floor(COLS*0.35), maxW=Math.floor(COLS*0.52);
+      const cx=COLS/2;
+      for(let r=0;r<TILE_ROWS;r++){
+        const meander=
+          0.38*Math.sin(0.008*r+seed)*Math.cos(0.003*r+1.1)+
+          0.28*Math.sin(0.018*r+seed+2.3)+
+          0.18*Math.sin(0.035*r+seed+4.7)*Math.cos(0.012*r+0.5)+
+          0.10*Math.sin(0.055*r+seed+1.9)+
+          0.06*Math.sin(0.09*r+seed+3.3);
+        const center=Math.round(cx+meander*0.55*(0.3*COLS));
+        const rwF=1+0.3*Math.sin(0.012*r+seed+100)*Math.cos(0.007*r+2)+0.15*Math.sin(0.025*r+seed+200)+0.1*Math.sin(0.04*r+seed+300);
+        const rw=Math.round(Math.max(minW,Math.min(maxW,(minW+maxW)/2*rwF)));
+        const lsh=Math.max(0,center-Math.round(rw/2));
+        const rsh=Math.min(COLS-1,center+Math.round(rw/2));
+        const lo=Math.max(2,Math.round(12*(1+0.35*Math.sin(0.025*r+seed+200)*0.5)));
+        const li=Math.max(1,Math.round(3*(1+0.3*Math.sin(0.025*r+seed+300)*0.4)));
+        const ld=Math.max(2,Math.round(5*(1+0.35*Math.sin(0.025*r+seed+400)*0.5)));
+        const lx=Math.max(2,Math.round(10*(1+0.35*Math.sin(0.025*r+seed+500)*0.7)));
+        RDATA.push({lsh,rsh,center});
+        const row=[];
+        for(let c=0;c<COLS;c++){
+          const lt=c-lsh,rt=rsh-c;
+          let zone;
+          if(c<lsh-lo-li) zone=LAND;
+          else if(c<lsh-li) zone=SHORE_OUTER;
+          else if(c<lsh) zone=SHORE_INNER;
+          else if(c>rsh+lo+li) zone=LAND;
+          else if(c>rsh+li) zone=SHORE_OUTER;
+          else if(c>rsh) zone=SHORE_INNER;
+          else{
+            const dc=Math.abs(c-center);
+            if(dc<lx/2) zone=WATER_DEEPEST;
+            else if(Math.min(lt,rt)<ld) zone=WATER_SHALLOW;
+            else zone=WATER_DEEP;
+          }
+          const chars=ZC[zone];
+          const ch=chars[Math.floor(rng()*chars.length)];
+          row.push({ch,base:ch,zone,lp:0.5,op:1,rot:0,vis:true});
+        }
+        TILE.push(row);
+      }
+    }
+
+    function tileRow(r){return((r%TILE_ROWS)+TILE_ROWS)%TILE_ROWS;}
+    function tileRdata(r){return RDATA[tileRow(r)];}
+
+    /* ── update tile (animação do rio) ── */
+    let bgFrame=0;
+    function updateTile(f){
+      const t=f*0.13, tw=t*0.65;
+      for(let r=0;r<TILE_ROWS;r++){
+        for(let c=0;c<COLS;c++){
+          const cell=TILE[r][c];
+          if(WZ.includes(cell.zone)){
+            const n=snoise(0.035*c+0.0005*t,0.018*r-0.0007*t);
+            const thr=cell.zone===WATER_DEEPEST?-0.22:cell.zone===WATER_DEEP?-0.02:-0.2;
+            const p=n-thr;
+            if(p>0){
+              cell.vis=true;
+              const idx=Math.min(Math.floor((p/0.6)*WCHARS.length),WCHARS.length-1);
+              cell.ch=WCHARS[idx];
+              cell.op=Math.min(1,p*2.5);
+              const nx2=snoise(0.035*c+0.0005*t+0.5,0.018*r-0.0007*t);
+              cell.rot=90+(n-nx2)*80;
+            } else {
+              cell.vis=false; cell.ch=' '; cell.op=0;
+            }
+            const la=Math.PI/2+0.25*snoise(0.0015*t,100);
+            cell.lp=Math.max(0,Math.min(1,(Math.sin(c*Math.cos(la)*0.07+r*Math.sin(la)*0.045-0.01*t)+0.2*snoise(0.04*c+50,0.04*r+50)+1)*0.45));
+          } else {
+            const wa=0.45*snoise(0.003*tw,0);
+            cell.lp=Math.max(0,Math.min(1,(Math.sin(c*Math.cos(wa)*0.055+0.28*Math.sin(wa)*r*0.038-0.009*tw)+0.1*snoise(0.025*c,0.025*r)+1)*0.5));
+            if(cell.zone===SHORE_INNER||cell.zone===SHORE_OUTER) cell.rot=((cell.lp-0.5)*2)*18;
+            if((cell.zone===LAND||cell.zone===SHORE_OUTER)&&cell.base==='·'){
+              const fi=Math.min(Math.floor(cell.lp*FCHARS.length),FCHARS.length-1);
+              cell.ch=FCHARS[fi];
+            }
+          }
+        }
+      }
+    }
+
+    /* ── partículas ── */
+    let particles=[], pid=0;
+    function spawnParticles(){
+      const startR=0;
+      if(Math.random()<0.04&&particles.filter(p=>p.t==='w').length<10){
+        const r=startR+Math.floor(Math.random()*VISIBLE_ROWS);
+        const rd=tileRdata(r); if(!rd) return;
+        const c=rd.lsh+Math.random()*(rd.rsh-rd.lsh);
+        particles.push({id:pid++,x:c,yr:r,ch:['·','∘','○'][Math.floor(Math.random()*3)],op:0,age:0,maxAge:100+Math.random()*80,t:'w'});
+      }
+      if(Math.random()<0.05&&particles.filter(p=>p.t==='b').length<8){
+        const r=startR+Math.floor(Math.random()*VISIBLE_ROWS);
+        const rd=tileRdata(r); if(!rd) return;
+        const c=(rd.lsh+rd.rsh)/2+(Math.random()-0.5)*(rd.rsh-rd.lsh)*0.35;
+        particles.push({id:pid++,x:c,yr:r,ch:'°',op:0,age:0,maxAge:70+Math.random()*70,t:'b',tw:Math.random()*Math.PI*2});
+      }
+    }
+    function updateParticles(){
+      const next=[];
+      for(const p of particles){
+        const nx=p.x+0.03*Math.sin(0.1*p.yr+0.07*p.x+0.018*p.age);
+        const nyr=p.yr+0.028; const age=p.age+1; let op;
+        if(p.t==='b'){p.tw=(p.tw||0)+0.05;op=Math.min(1,age/10)*Math.max(0,(p.maxAge-age)/15)*(0.75+0.2*Math.sin(p.tw));}
+        else{op=age<15?age/15*0.8:age>p.maxAge-20?(p.maxAge-age)/20*0.8:0.8;}
+        if(age<p.maxAge) next.push({...p,x:nx,yr:nyr,age,op});
+      }
+      particles=next;
+    }
+
+    /* ── sprites de terra ── */
+    let landSprites=[];
+    const FARM_LINES=['.-.___|','|=|/  \\','|_|___|'];
+    function farmColor(ch){
+      const p={roof:['#703018','#803820'],wall:['#a89060','#b8a070'],detail:['#805030','#704028'],win:['#c8a858','#d8b868']};
+      if(ch==='/'||ch==='\\') return p.roof[0];
+      if(ch==='-'||ch==='_') return p.detail[0];
+      if(ch==='|') return p.wall[0];
+      return p.detail[1];
+    }
+    function spawnLandSprite(){
+      if(landSprites.filter(s=>s.kind==='farm').length>=2) return;
+      const lines=FARM_LINES;
+      const w=lines.reduce((m,l)=>Math.max(m,l.length),0), h=lines.length;
+      const candidates=[];
+      for(let r=3;r<TILE_ROWS-h-2;r++){
+        const rd=RDATA[r]; if(!rd) continue;
+        const ls=rd.lsh-w-3, rs=rd.rsh+3;
+        if(ls>2) candidates.push({r,c:Math.floor(Math.random()*Math.max(1,ls-1))+1});
+        if(rs+w<COLS-1) candidates.push({r,c:rs+Math.floor(Math.random()*Math.max(1,COLS-rs-w-1))});
+      }
+      if(!candidates.length) return;
+      const pos=candidates[Math.floor(Math.random()*candidates.length)];
+      for(const sp of landSprites){
+        if(Math.abs(sp.r-pos.r)<h+2&&Math.abs(sp.c-pos.c)<w+4) return;
+      }
+      landSprites.push({kind:'farm',lines,colorFn:farmColor,r:pos.r,c:pos.c,op:0,phase:'in',born:bgFrame,lifeMax:700+Math.floor(Math.random()*500)});
+    }
+    function updateLandSprites(){
+      const FI=100,FO=150;
+      landSprites=landSprites.filter(sp=>{
+        const age=bgFrame-sp.born;
+        if(sp.phase==='in'){sp.op=Math.min(1,age/FI);if(age>=FI)sp.phase='hold';}
+        else if(sp.phase==='hold'){if(age>=sp.lifeMax)sp.phase='out';}
+        else if(sp.phase==='out'){sp.op=Math.max(0,1-(age-sp.lifeMax)/FO);if(sp.op<=0)return false;}
+        return true;
+      });
+      if(Math.random()<0.003) spawnLandSprite();
+    }
+
+    /* ── tartarugas ── */
+    let turtles=[];
+    function spawnTurtle(){
+      if(turtles.length>=3) return;
+      const r=Math.floor(Math.random()*TILE_ROWS);
+      const rd=RDATA[r]; if(!rd) return;
+      const side=Math.random()<0.5?'left':'right';
+      const c=side==='left'?rd.lsh+1:rd.rsh-2;
+      if(c<1||c>=COLS-2) return;
+      for(const t of turtles){if(Math.abs(t.r-r)<3&&Math.abs(t.c-c)<4) return;}
+      turtles.push({r,c,op:0,phase:'in',born:bgFrame,lifeMax:500+Math.floor(Math.random()*400)});
+    }
+    function updateTurtles(){
+      const FI=80,FO=100;
+      turtles=turtles.filter(t=>{
+        const age=bgFrame-t.born;
+        if(t.phase==='in'){t.op=Math.min(1,age/FI);if(age>=FI)t.phase='hold';}
+        else if(t.phase==='hold'){if(age>=t.lifeMax)t.phase='out';}
+        else if(t.phase==='out'){t.op=Math.max(0,1-(age-t.lifeMax)/FO);if(t.op<=0)return false;}
+        return true;
+      });
+      if(Math.random()<0.002) spawnTurtle();
+    }
+
+    /* ── patinhos ── */
+    let ducks=[];
+    function spawnDuck(){
+      if(ducks.length>=2) return;
+      const r=Math.floor(Math.random()*VISIBLE_ROWS);
+      const rd=tileRdata(r); if(!rd) return;
+      const c=rd.lsh+1+Math.random()*(rd.rsh-rd.lsh-2);
+      for(const d of ducks){if(Math.abs(d.r-r)<3&&Math.abs(d.c-c)<5) return;}
+      ducks.push({r,c,vy:0.012+Math.random()*0.008,op:0});
+    }
+    function updateDucks(){
+      ducks=ducks.filter(d=>{
+        const rd=tileRdata(Math.floor(d.r));
+        if(rd){const cx=(rd.lsh+rd.rsh)/2; d.c+=(cx-d.c)*0.01;}
+        d.r+=d.vy; d.op=Math.min(1,d.op+0.015);
+        return d.r<VISIBLE_ROWS+4;
+      });
+      if(Math.random()<0.0008) spawnDuck();
+    }
+
+    /* ── renderização ── */
+    const MONO='"SF Mono",Monaco,Inconsolata,"Courier New",monospace';
+    function renderBG(){
+      ctx.fillStyle=S.bgBase; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.font=`${FONT_PX}px ${MONO}`; ctx.textBaseline='top';
+      const startR=0, endR=startR+VISIBLE_ROWS+1;
+      for(let r=startR;r<=endR;r++){
+        const py=r*LINE_H; if(py<-LINE_H||py>canvas.height+LINE_H) continue;
+        const row=TILE[tileRow(r)];
+        for(let c=0;c<COLS;c++){
+          const cell=row[c]; const ch=cell.ch; if(!ch||ch===' ') continue;
+          const px=c*CHAR_W, lp=cell.lp||0.5;
+          const color=colorFor(cell.zone,ch,lp);
+          if(WZ.includes(cell.zone)&&'~·∘∿≈'.includes(ch)&&cell.vis&&cell.op>0.05){
+            ctx.save(); ctx.globalAlpha=Math.min(1,cell.op);
+            const cxp=px+CHAR_W/2, cyp=py+FONT_PX/2;
+            ctx.translate(cxp,cyp); ctx.rotate((cell.rot||0)*Math.PI/180); ctx.translate(-cxp,-cyp);
+            ctx.fillStyle=color; ctx.fillText(ch,px,py); ctx.restore();
+          } else {
+            ctx.fillStyle=color; ctx.fillText(ch,px,py);
+          }
+        }
+      }
+
+      /* partículas */
+      for(const p of particles){
+        const py=p.yr*LINE_H; if(py<-LINE_H||py>canvas.height+LINE_H) continue;
+        ctx.save(); ctx.globalAlpha=Math.max(0,p.op);
+        ctx.fillStyle=S.particle; ctx.fillText(p.ch,p.x*CHAR_W,py); ctx.restore();
+      }
+
+      /* fazendas */
+      const SZ=Math.round(FONT_PX*0.55);
+      const CW=SZ*0.62, LH=SZ*1.15;
+      for(const sp of landSprites){
+        if(sp.op<0.02) continue;
+        const basePy=sp.r*LINE_H;
+        if(basePy>canvas.height+LINE_H*4||basePy+sp.lines.length*LH<-LINE_H) continue;
+        ctx.save(); ctx.globalAlpha=sp.op*0.85;
+        ctx.font=`${SZ}px ${MONO}`; ctx.textBaseline='top';
+        for(let li=0;li<sp.lines.length;li++){
+          const py=basePy+li*LH;
+          const line=sp.lines[li];
+          for(let ci=0;ci<line.length;ci++){
+            const ch=line[ci]; if(ch===' ') continue;
+            ctx.fillStyle=sp.colorFn(ch);
+            ctx.fillText(ch,sp.c*CHAR_W+ci*CW,py);
+          }
+        }
+        ctx.restore();
+      }
+
+      /* tartarugas */
+      for(const t of turtles){
+        if(t.op<0.02) continue;
+        const px=t.c*CHAR_W, py=t.r*LINE_H;
+        if(py<-LINE_H*2||py>canvas.height+LINE_H) continue;
+        ctx.save(); ctx.globalAlpha=t.op*0.82;
+        ctx.font=`${SZ}px ${MONO}`; ctx.textBaseline='top';
+        ctx.fillStyle='#7a5830'; ctx.fillText(' o',px,py);
+        ctx.fillStyle='#6a8848'; ctx.fillText('_O_',px,py+SZ*1.1);
+        ctx.restore();
+      }
+
+      /* patinhos */
+      for(const d of ducks){
+        if(d.op<0.02) continue;
+        const px=Math.floor(d.c)*CHAR_W, py=d.r*LINE_H;
+        if(py<-LINE_H*2||py>canvas.height+LINE_H) continue;
+        ctx.save(); ctx.globalAlpha=d.op*0.52;
+        ctx.font=`${SZ}px ${MONO}`; ctx.textBaseline='top';
+        ctx.fillStyle='#a89840'; ctx.fillText('>o)',px,py);
+        ctx.fillStyle='#957830'; ctx.fillText('(_>',px,py+SZ*1.1);
+        ctx.restore();
+      }
+    }
+
+    /* ── loop ── */
+    let lastTs=0;
+    function loop(ts){
+      if(!lastTs) lastTs=ts;
+      const dt=Math.min(ts-lastTs,50); lastTs=ts;
+      bgFrame++;
+      if(bgFrame%3===0) updateTile(bgFrame);
+      spawnParticles(); updateParticles();
+      updateLandSprites(); updateTurtles(); updateDucks();
+      renderBG();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('resize',()=>{
+      resize();
+      buildTile();
+    },{passive:true});
+
+    buildTile();
+    updateTile(0);
+    requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>

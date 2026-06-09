@@ -1,0 +1,117 @@
+# Banco de Medicações — Plantão Enfermagem
+# Formato: Med:Nome P:PrincipioAtivo G:Grupo V:Via1,Via2 ADV:Efeito1,Efeito2 IND:Indicacao1,Indicacao2
+# Linhas começando com # são comentários e serão ignoradas
+# Vias válidas: VO, EV, IM, SC, SL, Inalatória, Local, Nasal
+# Edite à vontade — uma medicação por linha
+
+# ── PSICOTRÓPICOS ──
+Med:Diazepam P:Diazepam G:Psicotrópico V:EV,VO,IM ADV:Depressão respiratória,Sedação IND:Ansiedade,Convulsão
+Med:Midazolam P:Midazolam G:Psicotrópico V:EV,IM ADV:Depressão respiratória,Sedação IND:Sedação,Convulsão,Intubação
+Med:Fenobarbital P:Fenobarbital G:Psicotrópico V:EV,VO,IM ADV:Depressão respiratória,Hipotensão IND:Convulsão
+Med:Tiopental P:Tiopental G:Psicotrópico V:EV ADV:Depressão respiratória,Hipotensão IND:Indução anestésica,Convulsão
+Med:Zolpidem P:Zolpidem G:Psicotrópico V:VO ADV:Sonolência IND:Insônia
+Med:Fluoxetina P:Fluoxetina G:Psicotrópico V:VO ADV:Náusea,Insônia IND:Depressão
+Med:Venlafaxina P:Venlafaxina G:Psicotrópico V:VO ADV:Hipertensão,Náusea IND:Depressão
+Med:Escitalopram P:Escitalopram G:Psicotrópico V:VO ADV:Náusea IND:Ansiedade,Depressão
+Med:Amitriptilina P:Amitriptilina G:Psicotrópico V:VO ADV:Sedação,Hipotensão IND:Depressão,Dor
+Med:Clorpromazina P:Clorpromazina G:Psicotrópico V:VO,IM ADV:Sedação,Hipotensão,Efeito extrapiramidal IND:Psicose,Agitação
+Med:Risperidona P:Risperidona G:Psicotrópico V:VO ADV:Sedação IND:Psicose
+Med:Quetiapina P:Quetiapina G:Psicotrópico V:VO ADV:Sedação IND:Psicose
+Med:Haloperidol P:Haloperidol G:Psicotrópico V:EV,IM,VO ADV:Arritmia,Efeito extrapiramidal IND:Agitação,Psicose,Delirium
+Med:Carbamazepina P:Carbamazepina G:Psicotrópico V:VO ADV:Tontura IND:Convulsão
+Med:Fenitoína P:Fenitoína G:Psicotrópico V:EV,VO ADV:Arritmia,Hipotensão IND:Convulsão
+
+# ── OPIOIDES ──
+Med:Morfina P:Morfina G:Opioide V:EV,SC ADV:Depressão respiratória,Náusea,Constipação IND:Dor intensa,Infarto,Edema agudo de pulmão
+Med:Tramadol P:Tramadol G:Opioide V:VO,EV ADV:Náusea,Convulsão IND:Dor moderada
+Med:Codeína P:Codeína G:Opioide V:VO ADV:Constipação,Sedação IND:Dor leve,Tosse
+Med:Fentanil P:Fentanila G:Opioide V:EV ADV:Depressão respiratória,Rigidez torácica IND:Dor intensa,Sedação
+Med:Metadona P:Metadona G:Opioide V:VO,EV ADV:Depressão respiratória,Arritmia IND:Dor crônica,Dependência
+Med:Oxicodona P:Oxicodona G:Opioide V:VO ADV:Sedação,Constipação IND:Dor moderada a intensa
+Med:Petidina P:Meperidina G:Opioide V:EV,IM ADV:Neurotoxicidade,Convulsão IND:Dor aguda
+
+# ── ANALGÉSICOS ──
+Med:Paracetamol P:Paracetamol G:Analgésico V:VO,EV ADV:Hepatotoxicidade IND:Dor,Febre
+Med:Dipirona P:Dipirona sódica G:Analgésico V:VO,EV ADV:Agranulocitose IND:Dor,Febre
+Med:Diclofenaco P:Diclofenaco G:Analgésico V:VO,IM ADV:Gastrite,Sangramento IND:Dor,Inflamação
+Med:Ibuprofeno P:Ibuprofeno G:Analgésico V:VO ADV:Gastrite,Sangramento IND:Dor,Febre,Inflamação
+
+# ── ANESTÉSICOS ──
+Med:Etomidato P:Etomidato G:Anestésico V:EV ADV:Depressão respiratória,Mioclonia IND:Indução anestésica,Intubação
+Med:Propofol P:Propofol G:Anestésico V:EV ADV:Depressão respiratória,Hipotensão IND:Sedação UTI,Indução
+Med:Lidocaína P:Lidocaína G:Anestésico V:EV,Local ADV:Arritmia,Toxicidade do SNC IND:Anestesia local,Arritmia
+
+# ── RESPIRATÓRIO ──
+Med:Salbutamol P:Salbutamol G:Respiratório V:Inalatória ADV:Taquicardia,Tremor IND:Asma,Crise asmática
+Med:Ipratrópio P:Ipratrópio G:Respiratório V:Inalatória ADV:Boca seca IND:DPOC,Asma
+Med:Budesonida P:Budesonida G:Respiratório V:Inalatória ADV:Candidíase oral IND:Asma
+Med:Formoterol+Budesonida P:Budesonida+Formoterol G:Respiratório V:Inalatória ADV:Candidíase oral,Taquicardia IND:Asma,DPOC
+Med:Bromexina P:Bromexina G:Respiratório V:VO ADV:Náusea IND:Secreção respiratória
+Med:Acetilcisteína P:Acetilcisteína G:Respiratório V:VO,Inalatória ADV:Náusea IND:Muco espesso,Expectoração
+Med:Loratadina P:Loratadina G:Respiratório V:VO ADV:Sonolência leve IND:Alergia
+Med:Dexametasona P:Dexametasona G:Corticoide V:EV,VO,IM ADV:Hiperglicemia,Imunossupressão IND:Inflamação,Edema,Alergia grave
+
+# ── CARDIOVASCULAR ──
+Med:Hidroclorotiazida P:Hidroclorotiazida G:Cardiovascular V:VO ADV:Hipocalemia,Hiperglicemia IND:Hipertensão
+Med:Furosemida P:Furosemida G:Cardiovascular V:EV,VO ADV:Hipocalemia,Hipotensão IND:Edema,Insuficiência cardíaca
+Med:Captopril P:Captopril G:Cardiovascular V:VO ADV:Tosse seca,Hipotensão IND:Hipertensão
+Med:Enalapril P:Enalapril G:Cardiovascular V:VO ADV:Tosse seca,Hipercalemia IND:Hipertensão
+Med:Losartana P:Losartana G:Cardiovascular V:VO ADV:Hipotensão IND:Hipertensão
+Med:Verapamil P:Verapamil G:Cardiovascular V:VO ADV:Bradicardia,Constipação IND:Arritmia,Hipertensão
+Med:Amlodipino P:Amlodipino G:Cardiovascular V:VO ADV:Edema periférico IND:Hipertensão
+Med:Isossorbida P:Mononitrato de isossorbida G:Cardiovascular V:VO ADV:Hipotensão,Cefaleia IND:Angina
+Med:Nitroglicerina P:Nitroglicerina G:Cardiovascular V:EV,SL ADV:Hipotensão,Cefaleia IND:Angina,Edema agudo de pulmão
+Med:Amiodarona P:Amiodarona G:Cardiovascular V:EV,VO ADV:Toxicidade pulmonar,Arritmia IND:Arritmias
+Med:Digoxina P:Digoxina G:Cardiovascular V:VO,EV ADV:Intoxicação digitálica,Arritmia IND:Insuficiência cardíaca,Fibrilação atrial
+Med:Sinvastatina P:Sinvastatina G:Cardiovascular V:VO ADV:Mialgia,Hepatotoxicidade IND:Colesterol elevado
+Med:Atenolol P:Atenolol G:Cardiovascular V:VO ADV:Bradicardia,Hipotensão IND:Hipertensão,Arritmia
+Med:Metoprolol P:Metoprolol G:Cardiovascular V:VO,EV ADV:Bradicardia,Broncoespasmo IND:Hipertensão,Insuficiência cardíaca
+Med:Dobutamina P:Dobutamina G:Cardiovascular V:EV ADV:Taquicardia,Arritmia IND:Choque cardiogênico
+Med:Noradrenalina P:Norepinefrina G:Cardiovascular V:EV ADV:Isquemia,Hipertensão grave IND:Choque séptico,Hipotensão refratária
+Med:Adrenalina P:Epinefrina G:Cardiovascular V:EV,IM ADV:Taquicardia,Arritmia IND:Parada cardíaca,Anafilaxia
+
+# ── ANTICOAGULANTES ──
+Med:Heparina P:Heparina sódica G:Anticoagulante V:EV,SC ADV:Sangramento,Trombocitopenia induzida IND:Trombose,TEP,TVP
+Med:Enoxaparina P:Enoxaparina G:Anticoagulante V:SC ADV:Sangramento,Hematoma IND:Profilaxia TEP,TVP
+Med:Varfarina P:Varfarina G:Anticoagulante V:VO ADV:Sangramento,Necrose cutânea IND:Fibrilação atrial,Prótese valvar
+
+# ── ANTIAGREGANTES / TROMBOLÍTICOS ──
+Med:AAS P:Ácido acetilsalicílico G:Antiagregante V:VO ADV:Sangramento,Gastrite IND:Antiagregante plaquetário,Dor,Febre
+Med:Clopidogrel P:Clopidogrel G:Antiagregante V:VO ADV:Sangramento IND:Antiagregante plaquetário
+Med:Alteplase P:Alteplase G:Trombolítico V:EV ADV:Sangramento grave IND:Trombólise,AVC isquêmico,IAM
+
+# ── DIGESTÓRIO ──
+Med:Omeprazol P:Omeprazol G:Digestório V:VO,EV ADV:Dor abdominal IND:Úlcera,Refluxo
+Med:Metoclopramida P:Metoclopramida G:Digestório V:VO,EV ADV:Efeito extrapiramidal IND:Náusea
+Med:Ondansetrona P:Ondansetrona G:Digestório V:VO,EV ADV:Cefaleia IND:Náusea
+Med:Sucralfato P:Sucralfato G:Digestório V:VO ADV:Constipação IND:Proteção gástrica
+Med:Lactulose P:Lactulose G:Digestório V:VO ADV:Diarreia IND:Constipação
+Med:Escopolamina P:Escopolamina G:Digestório V:VO,EV ADV:Boca seca,Taquicardia IND:Cólica
+Med:Dimenidrinato P:Dimenidrinato G:Digestório V:VO,EV ADV:Sonolência IND:Náusea,Enjoo
+
+# ── ENDÓCRINO ──
+Med:Levotiroxina P:Levotiroxina G:Endócrino V:VO ADV:Taquicardia IND:Hipotireoidismo
+Med:Metformina P:Metformina G:Endócrino V:VO ADV:Diarreia IND:Diabetes tipo 2
+Med:Insulina Regular P:Insulina humana regular G:Endócrino V:EV,SC ADV:Hipoglicemia IND:Diabetes,Hiperglicemia
+Med:Glibenclamida P:Glibenclamida G:Endócrino V:VO ADV:Hipoglicemia IND:Diabetes tipo 2
+
+# ── CORTICOIDES ──
+Med:Prednisona P:Prednisona G:Corticoide V:VO ADV:Hiperglicemia,Ganho de peso IND:Inflamação
+Med:Hidrocortisona P:Hidrocortisona G:Corticoide V:EV,IM ADV:Hiperglicemia,Imunossupressão IND:Choque,Insuficiência adrenal
+Med:Metilprednisolona P:Metilprednisolona G:Corticoide V:EV,VO ADV:Hiperglicemia,Insônia IND:Inflamação grave,Asma grave
+
+# ── ANTIBIÓTICOS ──
+Med:Ceftriaxona P:Ceftriaxona G:Antibiótico V:EV,IM ADV:Alergia,Colestase IND:Infecções
+Med:Claritromicina P:Claritromicina G:Antibiótico V:VO ADV:Náusea,Gosto metálico IND:Infecções
+Med:Amoxicilina P:Amoxicilina G:Antibiótico V:VO ADV:Diarreia,Alergia IND:Infecções bacterianas
+Med:Ciprofloxacino P:Ciprofloxacino G:Antibiótico V:VO,EV ADV:Tendinopatia,Náusea IND:Infecções urinárias,Infecções intestinais
+Med:Metronidazol P:Metronidazol G:Antibiótico V:VO,EV ADV:Gosto metálico,Náusea IND:Infecções anaeróbias,Giardíase
+Med:Vancomicina P:Vancomicina G:Antibiótico V:EV ADV:Nefrotoxicidade,Red man syndrome IND:MRSA,Infecções graves
+
+# ── SOROS ──
+Med:SF 0.9% P:Cloreto de sódio 0.9% G:Soro V:EV ADV:Sobrecarga hídrica IND:Hidratação,Diluição
+Med:SG 5% P:Glicose 5% G:Soro V:EV ADV:Hiperglicemia IND:Hidratação,Energia
+Med:SG 50% P:Glicose hipertônica G:Soro V:EV ADV:Hiperglicemia,Flebite IND:Hipoglicemia grave
+Med:Ringer Lactato P:Ringer Lactato G:Soro V:EV ADV:Alcalose,Sobrecarga hídrica IND:Reposição volêmica,Trauma,Queimados
+Med:NaCl 3% P:Cloreto de sódio 3% G:Soro V:EV ADV:Hipernatremia,Edema IND:Hiponatremia grave,Edema cerebral
+Med:KCl 10% P:Cloreto de potássio 10% G:Soro V:EV ADV:Arritmia grave,Flebite IND:Hipocalemia
