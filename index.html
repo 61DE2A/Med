@@ -1,0 +1,2921 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plantão Enfermagem</title>
+<style>
+  :root {
+    --bg: #080604;
+    --fg: #e7ebf3;
+    --muted: #a6b0c3;
+    --accent: #c8a878;
+    --accent-2: #c87840;
+    --green: #6aaf7a;
+    --red: #d06050;
+    --warn: #c89840;
+    --primary: #c8a878;
+    --primary-dark: #a88050;
+    --glass-bg: rgba(200,168,80,0.045);
+    --glass-border: rgba(200,168,80,0.14);
+    --glass-border-strong: rgba(200,168,80,0.22);
+    --glass-shadow: 0 10px 40px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.06);
+    --glass-shadow-lg: 0 16px 60px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.07);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --pad: 20px;
+    --font: Tahoma, "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Monaco, Consolas, "Courier New", monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  html { background: #080604; }
+
+  body {
+    font-family: var(--font);
+    color: var(--fg);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    background: transparent;
+    overflow-x: hidden;
+  }
+
+  /* ── FUNDO ASCII ── */
+  #ascii-bg {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -2;
+    display: block; width: 100vw; height: 100vh; pointer-events: none;
+  }
+  #ascii-overlay {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: rgba(8,6,4,0.65);
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100; width: 100%;
+    backdrop-filter: saturate(140%) blur(14px);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
+    background: linear-gradient(180deg, rgba(20,16,10,.82), rgba(10,8,4,.60));
+    border-bottom: 1px solid rgba(200,168,80,.14);
+    box-shadow: 0 8px 28px rgba(0,0,0,.55);
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 12px;
+    color: var(--fg);
+  }
+  header .logo { font-size: 20px; }
+  header h1 { font-size: 16px; font-weight: 700; letter-spacing: .01em; }
+  header p { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── GLASS CARD BASE ── */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(10px) saturate(130%);
+    -webkit-backdrop-filter: blur(10px) saturate(130%);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  /* ── HOME ── */
+  .home-card {
+    padding: 28px 24px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .home-card h2 { color: var(--accent); font-size: 18px; margin-bottom: 5px; }
+  .home-card p { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .form-row input {
+    flex: 1; min-width: 170px;
+    background: rgba(200,168,80,.06);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: 9px 13px;
+    font-size: 14px;
+    color: var(--fg);
+    outline: none;
+    transition: border-color .2s, background .2s;
+    font-family: var(--font);
+  }
+  .form-row input::placeholder { color: var(--muted); }
+  .form-row input:focus { border-color: var(--accent); background: rgba(200,168,80,.10); }
+
+  /* ── SEXO CHECKBOX ── */
+  .sexo-wrap {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(200,168,80,.06);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: 9px 13px;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .sexo-wrap:hover { border-color: var(--accent); background: rgba(200,168,80,.10); }
+  .sexo-wrap input[type="checkbox"] { display: none; }
+  .sexo-icon { font-size: 15px; transition: transform .2s; }
+  .sexo-label { font-size: 13px; color: var(--muted); transition: color .2s; }
+  .sexo-wrap.fem .sexo-label { color: var(--accent); }
+  .sexo-wrap.fem { border-color: rgba(200,168,80,.28); }
+
+  /* ── SELECT ── */
+  select.text-input, select.q-select {
+    background: rgba(200,168,80,.06);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: 9px 13px;
+    font-size: 14px;
+    color: var(--fg);
+    outline: none;
+    transition: border-color .2s, background .2s;
+    font-family: var(--font);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a6b0c3' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  select.text-input:focus, select.q-select:focus { border-color: var(--accent); background-color: rgba(200,168,80,.10); }
+  select.text-input option, select.q-select option { background: #1a1410; color: var(--fg); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(180deg, rgba(200,168,80,.22), rgba(200,168,80,.10));
+    color: var(--accent);
+    border: 1px solid var(--glass-border-strong);
+    border-radius: var(--radius-sm);
+    padding: 9px 20px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: background .18s, transform .1s, border-color .18s;
+    font-family: var(--font);
+    letter-spacing: .01em;
+  }
+  .btn:hover { background: linear-gradient(180deg, rgba(200,168,80,.32), rgba(200,168,80,.16)); border-color: rgba(200,168,80,.35); }
+  .btn:active { transform: scale(0.97); }
+  .btn-green {
+    background: linear-gradient(180deg, rgba(106,175,122,.22), rgba(106,175,122,.10));
+    color: var(--green);
+    border-color: rgba(106,175,122,.28);
+  }
+  .btn-green:hover { background: linear-gradient(180deg, rgba(106,175,122,.32), rgba(106,175,122,.16)); }
+  .btn-outline {
+    background: transparent;
+    color: var(--muted);
+    border-color: rgba(200,168,80,.18);
+  }
+  .btn-outline:hover { background: rgba(200,168,80,.08); color: var(--accent); }
+  .btn-sm { padding: 6px 13px; font-size: 12px; }
+  .btn-danger {
+    background: linear-gradient(180deg, rgba(208,96,80,.22), rgba(208,96,80,.10));
+    color: var(--red); border-color: rgba(208,96,80,.28);
+  }
+  .btn-danger:hover { background: linear-gradient(180deg, rgba(208,96,80,.32), rgba(208,96,80,.16)); }
+
+  /* ── PATIENTS SECTION ── */
+  .patients-section h2 {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+  .patient-card {
+    margin-bottom: 12px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    background: rgba(200,168,80,.04);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: box-shadow .2s;
+  }
+  .patient-card:hover { box-shadow: var(--glass-shadow-lg); }
+  .patient-header {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(180deg, rgba(200,120,64,.10), rgba(200,120,64,.03));
+    border-bottom: 1px solid rgba(200,168,80,.10);
+    cursor: pointer;
+  }
+  .patient-card.collapsed .patient-header { border-bottom: none; }
+  .patient-card.collapsed .patient-card-body { display: none; }
+  .patient-header .bed { font-size: 17px; font-weight: 800; color: var(--accent); letter-spacing: .02em; }
+  .patient-header .name { font-size: 14px; font-weight: 500; color: var(--fg); }
+  .patient-header .badge {
+    font-size: 10px; padding: 3px 9px;
+    border-radius: 20px; font-weight: 700;
+    background: rgba(200,168,80,.10); color: var(--muted);
+    border: 1px solid rgba(200,168,80,.15);
+  }
+  .patient-header .badge.done {
+    background: rgba(106,175,122,.14); color: var(--green);
+    border-color: rgba(106,175,122,.22);
+  }
+  .card-actions { display: flex; align-items: center; gap: 5px; }
+  .btn-icon {
+    background: transparent; border: none; cursor: pointer;
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: var(--muted);
+    transition: background .15s, color .15s;
+  }
+  .btn-icon:hover { background: rgba(200,168,80,.12); color: var(--accent); }
+  .menu-wrap { position: relative; }
+  .menu-dropdown {
+    display: none;
+    position: absolute; right: 0; top: 34px;
+    background: rgba(16,12,6,.96);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: var(--glass-shadow-lg);
+    min-width: 160px; z-index: 200; overflow: hidden;
+    backdrop-filter: blur(18px);
+  }
+  .menu-dropdown.open { display: block; }
+  .menu-item {
+    width: 100%; background: transparent; border: none;
+    padding: 10px 16px; text-align: left; font-size: 13px;
+    cursor: pointer; color: var(--fg);
+    display: flex; align-items: center; gap: 8px;
+    transition: background .12s; font-family: var(--font);
+  }
+  .menu-item:hover { background: rgba(200,168,80,.09); }
+  .menu-item.danger { color: var(--red); }
+  .menu-item.danger:hover { background: rgba(208,96,80,.09); }
+
+  /* ── TABS ── */
+  .patient-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(200,168,80,.09);
+    background: rgba(0,0,0,.18);
+  }
+  .patient-tab {
+    flex: 1; padding: 9px;
+    text-align: center; font-size: 12px; font-weight: 600;
+    color: var(--muted); cursor: pointer; border: none;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+    font-family: var(--font);
+  }
+  .patient-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .patient-tab:disabled { opacity: .35; cursor: default; }
+  .tab-content { display: none; padding: 16px; }
+  .tab-content.active { display: block; }
+
+  /* ── ADMISSION ── */
+  .admission-container {
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow-lg);
+    background: rgba(200,168,80,.04);
+    backdrop-filter: blur(10px);
+  }
+  .admission-header {
+    background: linear-gradient(180deg, rgba(200,120,64,.18), rgba(200,120,64,.06));
+    border-bottom: 1px solid rgba(200,168,80,.12);
+    padding: 16px 20px;
+  }
+  .admission-header .patient-info { font-size: 17px; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+  .progress-bar-wrap { background: rgba(255,255,255,.12); border-radius: 20px; height: 5px; overflow: hidden; }
+  .progress-bar-fill { background: var(--accent); height: 100%; border-radius: 20px; transition: width .4s ease; }
+  .progress-label { font-size: 11px; color: var(--muted); margin-top: 5px; }
+  .step-body { padding: 20px; }
+  .step-title {
+    font-size: 16px; font-weight: 700; color: var(--accent);
+    margin-bottom: 18px; padding-bottom: 10px;
+    border-bottom: 1px solid rgba(200,168,80,.14);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .step-title span { font-size: 18px; }
+  .step-nav {
+    padding: 13px 20px;
+    background: rgba(0,0,0,.22);
+    border-top: 1px solid rgba(200,168,80,.09);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  /* ── QUESTION GROUPS ── */
+  .q-group {
+    background: rgba(200,168,80,.04);
+    border: 1px solid rgba(200,168,80,.10);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .q-group h3 {
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    text-transform: uppercase; letter-spacing: .09em; margin-bottom: 12px;
+  }
+  .q-item { margin-bottom: 12px; }
+  .q-item:last-child { margin-bottom: 0; }
+  .q-label { font-size: 13px; font-weight: 600; color: var(--fg); margin-bottom: 7px; display: block; }
+  .q-label small { font-weight: 400; color: var(--muted); }
+
+  /* ── PILLS ── */
+  .pill-group { display: flex; flex-wrap: wrap; gap: 7px; }
+  .pill-group input[type="radio"],
+  .pill-group input[type="checkbox"] { display: none; }
+  .pill-group label {
+    padding: 6px 14px;
+    border: 1px solid rgba(200,168,80,.16);
+    border-radius: 20px; font-size: 12px; font-weight: 500;
+    color: var(--muted); cursor: pointer;
+    transition: all .15s;
+    background: rgba(200,168,80,.04);
+  }
+  .pill-group label:hover { border-color: rgba(200,168,80,.3); color: var(--fg); }
+  .pill-group input[type="radio"]:checked + label,
+  .pill-group input[type="checkbox"]:checked + label {
+    background: rgba(200,168,80,.18); border-color: rgba(200,168,80,.4);
+    color: var(--accent); font-weight: 700;
+  }
+  .pill-group input[type="radio"].pill-green:checked + label,
+  .pill-group input[type="checkbox"].pill-green:checked + label {
+    background: rgba(106,175,122,.16); border-color: rgba(106,175,122,.35); color: var(--green);
+  }
+  .pill-group input[type="radio"].pill-red:checked + label,
+  .pill-group input[type="checkbox"].pill-red:checked + label {
+    background: rgba(208,96,80,.16); border-color: rgba(208,96,80,.35); color: var(--red);
+  }
+
+  /* ── TEXT INPUTS ── */
+  .text-input {
+    width: 100%;
+    background: rgba(200,168,80,.06);
+    border: 1px solid rgba(200,168,80,.14);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px; color: var(--fg); outline: none;
+    transition: border-color .2s, background .2s;
+    font-family: var(--font);
+  }
+  .text-input::placeholder { color: var(--muted); }
+  .text-input:focus { border-color: rgba(200,168,80,.4); background: rgba(200,168,80,.10); }
+  textarea.text-input { min-height: 78px; resize: vertical; }
+  .input-row { display: flex; gap: 9px; flex-wrap: wrap; }
+  .input-row .text-input { flex: 1; min-width: 90px; }
+
+  /* ── COND BLOCK ── */
+  .cond-block {
+    background: rgba(200,168,80,.04);
+    border-left: 2px solid rgba(200,168,80,.18);
+    border-radius: 0 8px 8px 0;
+    padding: 12px;
+    margin-top: 9px;
+    display: none;
+  }
+  .cond-block.visible { display: block; }
+
+  /* ── RESULT ── */
+  .result-box {
+    background: rgba(200,168,80,.05);
+    border: 1px solid rgba(200,168,80,.13);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 13px; line-height: 1.85;
+    color: var(--fg); white-space: pre-wrap;
+    font-family: var(--mono);
+  }
+  .result-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 14px; }
+
+  /* ── MEDS ── */
+  .med-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 14px; }
+  .med-item {
+    background: rgba(200,168,80,.05);
+    border: 1px solid rgba(200,168,80,.11);
+    border-radius: 10px;
+    padding: 11px 13px;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 9px;
+  }
+  .med-item .med-name { font-weight: 700; font-size: 13px; color: var(--fg); }
+  .med-item .med-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .med-item .med-time { font-size: 12px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .med-status {
+    display: inline-block; width: 11px; height: 11px;
+    border-radius: 50%;
+    background: rgba(200,168,80,.18);
+    cursor: pointer; margin-top: 3px;
+    transition: background .2s; border: none; outline: none;
+  }
+  .med-status.admin { background: var(--green); box-shadow: 0 0 8px rgba(106,175,122,.5); }
+  .med-add-form {
+    background: rgba(200,168,80,.04);
+    border: 1px solid rgba(200,168,80,.10);
+    border-radius: 10px;
+    padding: 13px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+
+  /* ── NOTES ── */
+  .note-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 14px; }
+  .note-item {
+    background: rgba(200,168,80,.05);
+    border: 1px solid rgba(200,168,80,.10);
+    border-radius: 10px;
+    padding: 11px 13px;
+  }
+  .note-item .note-time { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .note-item .note-text { font-size: 13px; color: var(--fg); }
+  .note-add-form { display: flex; flex-direction: column; gap: 9px; }
+
+  /* ── MISC ── */
+  .divider { border: none; border-top: 1px solid rgba(200,168,80,.10); margin: 14px 0; }
+  .empty-state { text-align: center; padding: 22px; color: var(--muted); font-size: 13px; }
+
+  /* ── MED ADMIN RESUMO ── */
+  .med-item-wrap { display: flex; flex-direction: column; }
+  .med-admin-resumo {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: rgba(106,175,122,.08);
+    border-left: 2px solid rgba(106,175,122,.3);
+    border-radius: 0 0 10px 10px;
+    padding: 8px 13px;
+    font-size: 12px; color: #9dd8a0; line-height: 1.5;
+  }
+  .med-admin-resumo-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+  .btn-copy-resumo {
+    background: none; border: none; cursor: pointer;
+    font-size: 13px; flex-shrink: 0; padding: 0 2px; opacity: .6;
+    transition: opacity .15s;
+  }
+  .btn-copy-resumo:hover { opacity: 1; }
+  .med-alta-vig { color: var(--warn); font-size: 12px; }
+
+  /* ── ADMIN MODAL ── */
+  #modal-admin-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(6px);
+    z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  #modal-admin-box {
+    background: rgba(14,10,4,.96);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    box-shadow: var(--glass-shadow-lg);
+    padding: 22px 20px;
+    width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto;
+  }
+  #modal-admin-title { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  #modal-admin-med-name {
+    font-size: 12px; color: var(--muted); margin-bottom: 16px;
+    padding-bottom: 11px; border-bottom: 1px solid rgba(200,168,80,.10);
+  }
+  .modal-field { margin-bottom: 13px; }
+  .modal-label { display: block; font-size: 12px; font-weight: 600; color: var(--fg); margin-bottom: 5px; }
+
+  @media (max-width: 520px) {
+    main { padding: 14px 10px 60px; }
+    .home-card { padding: 20px 14px; }
+    .step-body { padding: 14px; }
+  }
+
+  /* ── CURSOR ── */
+  html, body, * { cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="24" viewBox="0 0 16 24"><path d="M0 0 L0 20 L4 16 L7 23 L9 22 L6 15 L11 15 Z" fill="%23d06030" stroke="%23200800" stroke-width="1"/></svg>') 0 0, auto !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #ascii-bg { display: none; }
+  }
+
+  /* ── MED SPELL / SUGESTÃO ── */
+  .med-nome-unknown {
+    text-decoration: underline wavy var(--red);
+    cursor: pointer;
+  }
+  .med-info-panel {
+    background: rgba(200,168,80,.07);
+    border: 1px solid rgba(200,168,80,.18);
+    border-radius: 10px;
+    padding: 11px 13px;
+    font-size: 12px;
+    color: var(--fg);
+    margin-top: 6px;
+    line-height: 1.7;
+  }
+  .med-info-panel .mip-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 5px; }
+  .med-info-panel .mip-row { display: flex; gap: 6px; margin-bottom: 3px; flex-wrap: wrap; }
+  .mip-label { font-weight: 700; color: var(--muted); min-width: 90px; }
+  .mip-tag {
+    background: rgba(200,168,80,.10);
+    border: 1px solid rgba(200,168,80,.18);
+    border-radius: 20px;
+    padding: 1px 9px;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .mip-tag.red { background: rgba(208,96,80,.10); border-color: rgba(208,96,80,.22); color: var(--red); }
+  .mip-tag.green { background: rgba(106,175,122,.10); border-color: rgba(106,175,122,.22); color: var(--green); }
+
+  /* Popover de sugestões */
+  #med-suggest-pop {
+    position: fixed;
+    background: rgba(14,10,4,.97);
+    border: 1px solid var(--glass-border-strong);
+    border-radius: 12px;
+    box-shadow: var(--glass-shadow-lg);
+    z-index: 600;
+    min-width: 200px;
+    max-width: 280px;
+    overflow: hidden;
+    padding: 6px 0;
+  }
+  .med-sug-item {
+    padding: 9px 14px;
+    font-size: 13px;
+    color: var(--fg);
+    cursor: pointer;
+    transition: background .12s;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .med-sug-item:hover { background: rgba(200,168,80,.10); }
+  .med-sug-item .sug-name { font-weight: 700; color: var(--accent); }
+  .med-sug-item .sug-sub { font-size: 11px; color: var(--muted); }
+  .med-sug-none { padding: 9px 14px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+
+<body>
+<canvas id="ascii-bg"></canvas>
+<div id="ascii-overlay" aria-hidden="true"></div>
+
+<header>
+  <div class="logo">🏥</div>
+  <div>
+    <h1>Plantão Enfermagem</h1>
+    <p>Sistema de organização e admissão de pacientes</p>
+  </div>
+  <div class="header-menu-wrap" style="margin-left:auto;position:relative;flex-shrink:0;">
+    <button id="btn-header-menu" title="Menu" onclick="toggleHeaderMenu(event)" style="background:transparent;border:none;cursor:pointer;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted);transition:background .15s,color .15s;" onmouseover="this.style.background='rgba(200,168,80,.12)';this.style.color='var(--accent)'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'">⋯</button>
+    <div id="header-dropdown" class="menu-dropdown" style="right:0;top:38px;min-width:200px;">
+      <button class="menu-item" onclick="fecharHeaderMenu();abrirModalMedList()">💊 Banco de Medicações</button>
+      <button class="menu-item" onclick="fecharHeaderMenu();abrirPainelAnotacoes()">📋 Painel de Anotações</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div class="home-card">
+      <h2>Novo Paciente</h2>
+      <p>Informe os dados para criar o cartão do paciente</p>
+      <div class="form-row">
+        <input type="text" id="input-leito" placeholder="Leito (ex: 301A)" maxlength="10">
+        <input type="text" id="input-nome" placeholder="Nome do paciente">
+        <label class="sexo-wrap" id="sexo-wrap-label">
+          <input type="checkbox" id="input-sexo" onchange="toggleSexoUI()">
+          <span class="sexo-icon" id="sexo-icon">♂</span>
+          <span class="sexo-label" id="sexo-label-text">Masc.</span>
+        </label>
+      </div>
+      <br>
+      <button class="btn btn-green" onclick="criarPaciente()">✚ Criar cartão</button>
+    </div>
+
+    <div class="patients-section">
+      <h2>Pacientes do plantão</h2>
+      <div id="lista-pacientes"></div>
+      <div id="sem-pacientes" class="empty-state">Nenhum paciente cadastrado ainda.</div>
+    </div>
+  </div>
+
+  <!-- ADMISSION SCREEN -->
+  <div id="screen-admission" class="screen">
+    <div class="admission-container">
+      <div class="admission-header">
+        <div class="patient-info" id="adm-patient-title"></div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="adm-progress-bar"></div></div>
+        <div class="progress-label" id="adm-progress-label"></div>
+      </div>
+      <div id="adm-step-content"></div>
+      <div class="step-nav">
+        <button class="btn btn-outline" id="adm-btn-back" onclick="admStep(-1)">← Anterior</button>
+        <button class="btn" id="adm-btn-next" onclick="admStep(1)">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="screen-result" class="screen">
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+      <button class="btn btn-outline btn-sm" onclick="voltarParaHome()">← Voltar</button>
+      <h2 style="font-size:17px;color:var(--primary)" id="result-title"></h2>
+    </div>
+    <div class="result-box" id="result-text"></div>
+    <div class="result-actions">
+      <button class="btn btn-sm" onclick="copiarResumo()">📋 Copiar resumo</button>
+      <button class="btn btn-green btn-sm" onclick="finalizarAdmissao()">✓ Confirmar e liberar abas</button>
+    </div>
+  </div>
+</main>
+
+
+<!-- MODAL LISTA DE MEDICAÇÕES -->
+<div id="modal-medlist-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(7px);z-index:700;align-items:flex-start;justify-content:flex-end;padding:56px 16px 16px;" onclick="fecharModalMedListOverlay(event)">
+  <div style="background:rgba(14,10,4,.97);border:1px solid rgba(200,168,80,.14);border-radius:16px;box-shadow:0 16px 60px rgba(0,0,0,.8);width:100%;max-width:420px;max-height:calc(100vh - 72px);display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:14px 16px 12px;border-bottom:1px solid rgba(200,168,80,.12);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;">
+      <span style="font-size:14px;font-weight:700;color:var(--accent);">💊 Banco de Medicações <span id="modal-medlist-count" style="font-size:11px;font-weight:500;color:var(--muted);background:rgba(200,168,80,.10);border:1px solid rgba(200,168,80,.18);border-radius:20px;padding:2px 9px;margin-left:4px;"></span></span>
+      <button onclick="fecharModalMedList()" style="background:transparent;border:none;cursor:pointer;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);">✕</button>
+    </div>
+    <div style="padding:10px 14px 8px;flex-shrink:0;border-bottom:1px solid rgba(200,168,80,.08);">
+      <input type="text" id="modal-medlist-search" placeholder="Buscar nome, genérico ou comercial…" oninput="filtrarModalMedList(this.value)" style="width:100%;background:rgba(200,168,80,.07);border:1px solid rgba(200,168,80,.16);border-radius:8px;padding:7px 11px;font-size:13px;color:var(--fg);outline:none;font-family:var(--font);">
+    </div>
+    <div id="modal-medlist-body" style="overflow-y:auto;padding:10px 12px 14px;flex:1;"></div>
+  </div>
+</div>
+
+<!-- MODAL PAINEL DE ANOTAÇÕES -->
+<div id="modal-painel-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(7px);z-index:700;overflow-y:auto;" onclick="fecharPainelAnotacoesOverlay(event)">
+  <div id="modal-painel-box" style="background:rgba(14,10,4,.97);border:1px solid rgba(200,168,80,.14);border-radius:16px;box-shadow:0 16px 60px rgba(0,0,0,.8);width:calc(100% - 32px);max-width:680px;margin:56px auto 32px;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:16px 20px 14px;border-bottom:1px solid rgba(200,168,80,.12);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;">
+      <span style="font-size:15px;font-weight:700;color:var(--accent);">📋 Painel Geral de Anotações</span>
+      <button onclick="fecharPainelAnotacoes()" style="background:transparent;border:none;cursor:pointer;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);">✕</button>
+    </div>
+    <div id="modal-painel-body" style="padding:16px 20px;flex:1;"></div>
+    <div style="padding:14px 20px;border-top:1px solid rgba(200,168,80,.10);display:flex;justify-content:flex-end;">
+      <button class="btn btn-green" onclick="copiarTodasAnotacoes()">📋 Copiar todas as anotações</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// BANCO DE MEDICAÇÕES
+// ════════════════════════════════════════════
+const MED_DB = [
+/* ══ PSICOTRÓPICO ══ */
+{n:"Diazepam",p:"Diazepam",c:["Valium","Dienpax","Compaz"],v:["EV","VO","IM"],e:["depressão respiratória","sedação"],i:["ansiedade","convulsão"],g:"Psicotrópico"},
+{n:"Midazolam",p:"Midazolam",c:["Dormonid","Versed"],v:["EV","IM"],e:["depressão respiratória","sedação"],i:["sedação","convulsão","intubação"],g:"Psicotrópico"},
+{n:"Lorazepam",p:"Lorazepam",c:["Ativan","Lorax"],v:["EV","VO","IM"],e:["sedação","depressão respiratória"],i:["ansiedade","convulsão","abstinência alcoólica"],g:"Psicotrópico"},
+{n:"Clonazepam",p:"Clonazepam",c:["Rivotril"],v:["VO"],e:["sedação","tontura"],i:["ansiedade","convulsão","transtorno do pânico"],g:"Psicotrópico"},
+{n:"Alprazolam",p:"Alprazolam",c:["Frontal","Apraz","Xanax"],v:["VO"],e:["sedação","dependência"],i:["ansiedade","síndrome do pânico"],g:"Psicotrópico"},
+{n:"Fenobarbital",p:"Fenobarbital",c:["Gadernal","Gardenal","Luminal"],v:["EV","VO","IM"],e:["depressão respiratória","hipotensão"],i:["convulsão"],g:"Psicotrópico"},
+{n:"Tiopental",p:"Tiopental",c:["Thiopentax","Tiopentax"],v:["EV"],e:["depressão respiratória","hipotensão"],i:["indução anestésica","convulsão"],g:"Psicotrópico"},
+{n:"Zolpidem",p:"Zolpidem",c:["Stilnox","Zolpiderm","Hypnogen"],v:["VO"],e:["sonolência"],i:["insônia"],g:"Psicotrópico"},
+{n:"Fluoxetina",p:"Fluoxetina",c:["Prozac","Daforin","Fluxene"],v:["VO"],e:["náusea","insônia"],i:["depressão"],g:"Psicotrópico"},
+{n:"Sertralina",p:"Sertralina",c:["Zoloft","Assert","Tolrest"],v:["VO"],e:["náusea","insônia","disfunção sexual"],i:["depressão","ansiedade","TOC"],g:"Psicotrópico"},
+{n:"Paroxetina",p:"Paroxetina",c:["Aropax","Cebrilin","Pondera"],v:["VO"],e:["náusea","ganho de peso","síndrome de descontinuação"],i:["depressão","ansiedade"],g:"Psicotrópico"},
+{n:"Venlafaxina",p:"Venlafaxina",c:["Efexor","Venlift","Venlaxin"],v:["VO"],e:["hipertensão","náusea"],i:["depressão"],g:"Psicotrópico"},
+{n:"Duloxetina",p:"Duloxetina",c:["Cymbalta","Dulsivan"],v:["VO"],e:["náusea","insônia","hipertensão"],i:["depressão","dor neuropática","fibromialgia"],g:"Psicotrópico"},
+{n:"Escitalopram",p:"Escitalopram",c:["Lexapro","Reconter"],v:["VO"],e:["náusea"],i:["ansiedade","depressão"],g:"Psicotrópico"},
+{n:"Citalopram",p:"Citalopram",c:["Cipramil","Procimax"],v:["VO"],e:["náusea","prolongamento QT"],i:["depressão"],g:"Psicotrópico"},
+{n:"Amitriptilina",p:"Amitriptilina",c:["Amytril","Tryptanol"],v:["VO"],e:["sedação","hipotensão","boca seca"],i:["depressão","dor neuropática","enxaqueca"],g:"Psicotrópico"},
+{n:"Nortriptilina",p:"Nortriptilina",c:["Pamelor"],v:["VO"],e:["sedação","boca seca"],i:["depressão","dor neuropática"],g:"Psicotrópico"},
+{n:"Imipramina",p:"Imipramina",c:["Tofranil"],v:["VO"],e:["sedação","arritmia","hipotensão ortostática"],i:["depressão","enurese"],g:"Psicotrópico"},
+{n:"Clorpromazina",p:"Clorpromazina",c:["Amplictil","Longactil"],v:["VO","IM"],e:["sedação","hipotensão","efeito extrapiramidal"],i:["psicose","agitação"],g:"Psicotrópico"},
+{n:"Risperidona",p:"Risperidona",c:["Risperdal","Zargus"],v:["VO","IM"],e:["sedação","hiperprolactinemia"],i:["psicose","esquizofrenia"],g:"Psicotrópico"},
+{n:"Quetiapina",p:"Quetiapina",c:["Seroquel","Queropax","Kvetiapin"],v:["VO"],e:["sedação","síndrome metabólica"],i:["psicose","transtorno bipolar"],g:"Psicotrópico"},
+{n:"Olanzapina",p:"Olanzapina",c:["Zyprexa","Paxamer","Olzep"],v:["VO","IM"],e:["ganho de peso","síndrome metabólica"],i:["esquizofrenia","transtorno bipolar","agitação"],g:"Psicotrópico"},
+{n:"Aripiprazol",p:"Aripiprazol",c:["Abilify","Arip"],v:["VO","IM"],e:["acatisia","insônia"],i:["esquizofrenia","transtorno bipolar"],g:"Psicotrópico"},
+{n:"Clozapina",p:"Clozapina",c:["Leponex","Clozapin"],v:["VO"],e:["agranulocitose","convulsão","miocardite"],i:["esquizofrenia refratária"],g:"Psicotrópico"},
+{n:"Haloperidol",p:"Haloperidol",c:["Haldol","Haloperil"],v:["EV","IM","VO"],e:["arritmia","efeito extrapiramidal"],i:["agitação","psicose","delirium"],g:"Psicotrópico"},
+{n:"Carbamazepina",p:"Carbamazepina",c:["Tegretol","Convulsan"],v:["VO"],e:["tontura","diplopia","síndrome de Stevens-Johnson"],i:["convulsão","neuralgia do trigêmeo","transtorno bipolar"],g:"Psicotrópico"},
+{n:"Ácido Valpróico",p:"Ácido valpróico",c:["Depakene","Valpakine","Depakote"],v:["VO","EV"],e:["hepatotoxicidade","ganho de peso","tremor"],i:["convulsão","transtorno bipolar","enxaqueca"],g:"Psicotrópico"},
+{n:"Lamotrigina",p:"Lamotrigina",c:["Lamictal","Labileno"],v:["VO"],e:["síndrome de Stevens-Johnson","tontura"],i:["convulsão","transtorno bipolar"],g:"Psicotrópico"},
+{n:"Fenitoína",p:"Fenitoína",c:["Hidantal","Epelin"],v:["EV","VO"],e:["arritmia","hipotensão","hiperplasia gengival"],i:["convulsão","arritmia"],g:"Psicotrópico"},
+{n:"Levetiracetam",p:"Levetiracetam",c:["Keppra","Levetan"],v:["VO","EV"],e:["irritabilidade","sonolência"],i:["convulsão"],g:"Psicotrópico"},
+{n:"Topiramato",p:"Topiramato",c:["Topamax","Topiramax"],v:["VO"],e:["nefrolitíase","déficit cognitivo","perda de peso"],i:["convulsão","enxaqueca"],g:"Psicotrópico"},
+{n:"Bupropiona",p:"Bupropiona",c:["Wellbutrin","Zyban","Bup"],v:["VO"],e:["convulsão","insônia","boca seca"],i:["depressão","cessação do tabagismo"],g:"Psicotrópico"},
+{n:"Mirtazapina",p:"Mirtazapina",c:["Remeron","Mirtazil"],v:["VO"],e:["ganho de peso","sedação"],i:["depressão","insônia","náusea"],g:"Psicotrópico"},
+{n:"Lítio",p:"Carbonato de lítio",c:["Carbolitium","Neurolithium"],v:["VO"],e:["tremor","intoxicação"],i:["transtorno bipolar"],g:"Psicotrópico"},
+{n:"Biperideno",p:"Biperideno",c:["Akineton"],v:["VO","IM","EV"],e:["boca seca","confusão"],i:["efeito extrapiramidal por antipsicóticos"],g:"Psicotrópico"},
+/* ══ OPIOIDE ══ */
+{n:"Morfina",p:"Morfina",c:["Dimorf","Morfenil","Dolo Moff"],v:["EV","SC"],e:["depressão respiratória","náusea","constipação"],i:["dor intensa","infarto","edema agudo de pulmão"],g:"Opioide"},
+{n:"Tramadol",p:"Tramadol",c:["Tramal","Tramadon","Dorless"],v:["VO","EV","IM"],e:["náusea","convulsão","tontura"],i:["dor moderada"],g:"Opioide"},
+{n:"Codeína",p:"Codeína",c:["Codein","Tylex","Belacodid"],v:["VO"],e:["constipação","sedação"],i:["dor leve","tosse"],g:"Opioide"},
+{n:"Fentanil",p:"Fentanila",c:["Fentanest","Durogesic","Actiq"],v:["EV","Transdérmico"],e:["depressão respiratória","rigidez torácica"],i:["dor intensa","sedação","anestesia"],g:"Opioide"},
+{n:"Metadona",p:"Metadona",c:["Metadon"],v:["VO","EV"],e:["depressão respiratória","arritmia (QTc)"],i:["dor crônica","dependência de opioides"],g:"Opioide"},
+{n:"Oxicodona",p:"Oxicodona",c:["Oxycontin","Oxynorm"],v:["VO"],e:["sedação","constipação","depressão respiratória"],i:["dor moderada a intensa"],g:"Opioide"},
+{n:"Petidina",p:"Meperidina",c:["Dolantina"],v:["EV","IM"],e:["neurotoxicidade","convulsão","tremor"],i:["dor aguda","calafrio pós-transfusão"],g:"Opioide"},
+{n:"Buprenorfina",p:"Buprenorfina",c:["Temgesic","Suboxone","Norspan"],v:["SL","EV","Transdérmico"],e:["náusea","cefaleia","constipação"],i:["dor","dependência de opioides"],g:"Opioide"},
+{n:"Nalbufina",p:"Nalbufina",c:["Nubain"],v:["EV","IM","SC"],e:["sedação","náusea"],i:["dor moderada a intensa"],g:"Opioide"},
+{n:"Naloxona",p:"Naloxona",c:["Narcan"],v:["EV","IM","IN"],e:["síndrome de abstinência","náusea"],i:["reversão de intoxicação por opioides"],g:"Opioide"},
+{n:"Sufentanil",p:"Sufentanil",c:["Sufenta"],v:["EV"],e:["depressão respiratória","bradicardia"],i:["analgesia intensa","anestesia"],g:"Opioide"},
+{n:"Remifentanil",p:"Remifentanil",c:["Ultiva"],v:["EV"],e:["depressão respiratória","bradicardia","hipotensão"],i:["analgesia em UTI","procedimentos"],g:"Opioide"},
+/* ══ ANALGÉSICO / ANTI-INFLAMATÓRIO ══ */
+{n:"Paracetamol",p:"Paracetamol",c:["Tylenol","Dôrico","Termol","Febrimol"],v:["VO","EV","Retal"],e:["hepatotoxicidade (sobredose)"],i:["dor","febre"],g:"Analgésico"},
+{n:"Dipirona",p:"Dipirona sódica",c:["Novalgina","Anador","Baralgin","Doralgina"],v:["VO","EV","IM","Retal"],e:["agranulocitose","hipotensão IV rápida"],i:["dor","febre","cólica"],g:"Analgésico"},
+{n:"Ibuprofeno",p:"Ibuprofeno",c:["Advil","Alivium","Ibupril","Buscofem"],v:["VO","Retal"],e:["gastrite","nefrotoxicidade","sangramento"],i:["dor","febre","inflamação","dismenorreia"],g:"Analgésico"},
+{n:"Naproxeno",p:"Naproxeno",c:["Flanax","Naproxen","Naprosyn"],v:["VO"],e:["gastrite","nefrotoxicidade"],i:["dor","artrite","inflamação","gota"],g:"Analgésico"},
+{n:"Cetoprofeno",p:"Cetoprofeno",c:["Profenid","Cetoprofeno"],v:["EV","IM","VO"],e:["gastrite","nefrotoxicidade"],i:["dor aguda","inflamação"],g:"Analgésico"},
+{n:"Diclofenaco",p:"Diclofenaco",c:["Voltaren","Cataflam","Biofenac"],v:["VO","IM","Tópico"],e:["gastrite","hepatotoxicidade"],i:["dor","inflamação","artrite"],g:"Analgésico"},
+{n:"Meloxicam",p:"Meloxicam",c:["Mobic","Movatec","Artrozan"],v:["VO","IM","EV"],e:["gastrite (menor)","nefrotoxicidade"],i:["artrite","osteoartrite","dor"],g:"Analgésico"},
+{n:"Cetorolaco",p:"Cetorolaco",c:["Toradol","Toragesic"],v:["IM","EV","VO"],e:["gastrite","nefrotoxicidade","sangramento"],i:["dor pós-operatória","dor renal","cólica"],g:"Analgésico"},
+{n:"Tenoxicam",p:"Tenoxicam",c:["Tilatil","Tobitil"],v:["EV","IM","VO"],e:["gastrite","edema"],i:["dor","artrite","inflamação"],g:"Analgésico"},
+{n:"Piroxicam",p:"Piroxicam",c:["Feldene","Candyl"],v:["VO","IM"],e:["gastrite","nefrotoxicidade"],i:["artrite","dor"],g:"Analgésico"},
+{n:"Artrinid",p:"Indometacina",c:["Artrinid","Indocid","Indometacina"],v:["VO","Retal"],e:["gastrite grave","cefaleia","nefrotoxicidade"],i:["artrite","gota","fechar CIA/CIV","pericardite"],g:"Analgésico"},
+{n:"Celecoxibe",p:"Celecoxibe",c:["Celebra","Celox"],v:["VO"],e:["risco cardiovascular","edema"],i:["artrite","dor crônica"],g:"Analgésico"},
+{n:"Etoricoxibe",p:"Etoricoxibe",c:["Arcoxia","Etoricoxibe"],v:["VO"],e:["risco cardiovascular","edema"],i:["artrite","gota aguda","dor"],g:"Analgésico"},
+{n:"Gabapentina",p:"Gabapentina",c:["Neurontin","Gabaneurin","Epinerv"],v:["VO"],e:["tontura","sedação","edema"],i:["dor neuropática","epilepsia"],g:"Analgésico"},
+{n:"Pregabalina",p:"Pregabalina",c:["Lyrica","Pregabalina"],v:["VO"],e:["tontura","sedação","edema","dependência"],i:["dor neuropática","fibromialgia","epilepsia"],g:"Analgésico"},
+/* ══ ANTIBIÓTICO ══ */
+{n:"Amoxicilina",p:"Amoxicilina",c:["Amoxil","Amoxicilina","Novocilin"],v:["VO","EV"],e:["diarreia","reação alérgica"],i:["infecções respiratórias","otite","sinusite","IVU"],g:"Antibiótico"},
+{n:"Amoxicilina + Clavulanato",p:"Amoxicilina + Ácido clavulânico",c:["Clavulin","Augmentin","Duo"],v:["VO","EV"],e:["diarreia","hepatotoxicidade"],i:["infecções mistas","sinusite","pneumonia","infecção pele"],g:"Antibiótico"},
+{n:"Ampicilina",p:"Ampicilina",c:["Binotal","Ampicilina"],v:["EV","IM"],e:["diarreia","alergia"],i:["meningite","endocardite","IVU"],g:"Antibiótico"},
+{n:"Ampicilina + Sulbactam",p:"Ampicilina + Sulbactam",c:["Unasyn","Begalin"],v:["EV","IM"],e:["diarreia","alergia"],i:["infecções pele","pneumonia aspirativa","peritonite"],g:"Antibiótico"},
+{n:"Oxacilina",p:"Oxacilina",c:["Oxacilina","Staficilin N"],v:["EV","IM"],e:["flebite","hepatotoxicidade","nefrotoxicidade"],i:["infecções por Staphylococcus (MSSA)","osteomielite"],g:"Antibiótico"},
+{n:"Penicilina G Cristalina",p:"Penicilina G potássica",c:["Penicilina G","Cristalpen"],v:["EV"],e:["alergia","hipercalemia (penicilina K)"],i:["sífilis","meningite","endocardite","erisipela grave"],g:"Antibiótico"},
+{n:"Penicilina G Benzatina",p:"Penicilina G benzatina",c:["Benzetacil","Benzilpenicilina"],v:["IM"],e:["dor no local","alergia","embolia (não usar IV)"],i:["sífilis","faringite","profilaxia febre reumática"],g:"Antibiótico"},
+{n:"Ceftriaxona",p:"Ceftriaxona",c:["Rocefin","Triaxin","Ceftriax"],v:["EV","IM"],e:["alergia","colestase","diarreia"],i:["pneumonia","meningite","sepse","gonorreia","IVU"],g:"Antibiótico"},
+{n:"Cefazolina",p:"Cefazolina",c:["Kefazol","Cefazolina"],v:["EV","IM"],e:["alergia","diarreia"],i:["profilaxia cirúrgica","infecções pele","endocardite (MSSA)"],g:"Antibiótico"},
+{n:"Cefuroxima",p:"Cefuroxima",c:["Zinacef","Cefurox"],v:["VO","EV","IM"],e:["diarreia","alergia"],i:["pneumonia","sinusite","IVU","infecções pele"],g:"Antibiótico"},
+{n:"Cefepima",p:"Cefepima",c:["Maxcef","Cefepime"],v:["EV","IM"],e:["neurotoxicidade","diarreia"],i:["pneumonia hospitalar","sepse","infecção por Pseudomonas"],g:"Antibiótico"},
+{n:"Ceftazidima",p:"Ceftazidima",c:["Fortaz","Keftazim","Tazicef"],v:["EV","IM"],e:["diarreia","alergia"],i:["infecção por Pseudomonas","fibrose cística","meningite"],g:"Antibiótico"},
+{n:"Keftron",p:"Cefaloridina / Ceftriaxona composto",c:["Keftron"],v:["EV","IM"],e:["diarreia","colestase"],i:["infecções bacterianas graves","sepse"],g:"Antibiótico"},
+{n:"Ceftazidima + Avibactam",p:"Ceftazidima + Avibactam",c:["Zavicefta"],v:["EV"],e:["náusea","diarreia"],i:["infecções por KPC","Pseudomonas MDR","pneumonia hospitalar"],g:"Antibiótico"},
+{n:"Ceftolozano + Tazobactam",p:"Ceftolozano + Tazobactam",c:["Zerbaxa"],v:["EV"],e:["cefaleia","febre"],i:["Pseudomonas MDR","pneumonia hospitalar"],g:"Antibiótico"},
+{n:"Cefoxitina",p:"Cefoxitina",c:["Mefoxin"],v:["EV","IM"],e:["diarreia","flebite"],i:["infecções abdominais","profilaxia cirúrgica","gonorreia"],g:"Antibiótico"},
+{n:"Gentamicina",p:"Gentamicina",c:["Garamicina","Gentamicina"],v:["EV","IM"],e:["nefrotoxicidade","ototoxicidade"],i:["sepse (gram-negativo)","IVU","endocardite (combinação)"],g:"Antibiótico"},
+{n:"Amicacina",p:"Amicacina",c:["Amikin","Amicacina"],v:["EV","IM"],e:["nefrotoxicidade","ototoxicidade"],i:["sepse por gram-negativo","TB MDR","pneumonia hospitalar"],g:"Antibiótico"},
+{n:"Tobramicina",p:"Tobramicina",c:["Tobrex","TOBI"],v:["EV","Inalatória"],e:["nefrotoxicidade","ototoxicidade"],i:["Pseudomonas (fibrose cística)","infecções oculares"],g:"Antibiótico"},
+{n:"Ciprofloxacino",p:"Ciprofloxacino",c:["Cipro","Ciflox","Ciprobay"],v:["VO","EV"],e:["tendinite","prolongamento QTc","fotossensibilidade"],i:["IVU","infecções intestinais","pneumonia","antraz"],g:"Antibiótico"},
+{n:"Levofloxacino",p:"Levofloxacino",c:["Levaquin","Tavanic","Flonamic"],v:["VO","EV"],e:["prolongamento QTc","tendinite","fotossensibilidade"],i:["pneumonia","IVU","sinusite","TB (adjuvante)"],g:"Antibiótico"},
+{n:"Moxifloxacino",p:"Moxifloxacino",c:["Avelox","Moxivig"],v:["VO","EV"],e:["prolongamento QTc","diarreia"],i:["pneumonia","sinusite","infecção pele"],g:"Antibiótico"},
+{n:"Norfloxacino",p:"Norfloxacino",c:["Norfloxin","Floxan"],v:["VO"],e:["tontura","fotossensibilidade"],i:["IVU","prostatite"],g:"Antibiótico"},
+{n:"Azitromicina",p:"Azitromicina",c:["Zitromax","Azi","Astro"],v:["VO","EV"],e:["prolongamento QTc","náusea","diarreia"],i:["pneumonia","infecções respiratórias","clamídia","MAC"],g:"Antibiótico"},
+{n:"Claritromicina",p:"Claritromicina",c:["Klaricid","Klacid","Clarbact"],v:["VO","EV"],e:["prolongamento QTc","náusea","gosto metálico"],i:["pneumonia","H. pylori","MAC","infecções respiratórias"],g:"Antibiótico"},
+{n:"Eritromicina",p:"Eritromicina",c:["Ilosone","Pantomicina"],v:["VO","EV"],e:["gastrite","hepatotoxicidade","prolongamento QTc"],i:["alergia a penicilinas","infecções respiratórias","gastroparesia"],g:"Antibiótico"},
+{n:"Metronidazol",p:"Metronidazol",c:["Flagyl","Metronix","Tricomonacid"],v:["VO","EV"],e:["náusea","gosto metálico","neuropatia"],i:["anaeróbios","C. difficile","amebíase","tricomoníase","H. pylori"],g:"Antibiótico"},
+{n:"Clindamicina",p:"Clindamicina",c:["Dalacin","Clindamicina"],v:["VO","EV","IM"],e:["colite por C. difficile","diarreia"],i:["infecções por anaeróbios","infecções por MSSA","toxoplasmose"],g:"Antibiótico"},
+{n:"Imipeném + Cilastatina",p:"Imipeném + Cilastatina",c:["Tienam","Primaxin"],v:["EV"],e:["convulsão","náusea","diarreia"],i:["infecções por gram-negativo MDR","sepse grave"],g:"Antibiótico"},
+{n:"Meropeném",p:"Meropeném",c:["Meronem","Meropenem"],v:["EV"],e:["diarreia","convulsão (menor que imipeném)"],i:["meningite bacteriana","sepse grave","infecções por KPC não-carbapenemase"],g:"Antibiótico"},
+{n:"Ertapeném",p:"Ertapeném",c:["Invanz"],v:["EV","IM"],e:["diarreia","cefaleia"],i:["infecções abdominais","pneumonia","IVU complicada","pé diabético"],g:"Antibiótico"},
+{n:"Doripeném",p:"Doripeném",c:["Doribax"],v:["EV"],e:["cefaleia","diarreia"],i:["pneumonia hospitalar","infecções por Pseudomonas MDR"],g:"Antibiótico"},
+{n:"Piperacilina + Tazobactam",p:"Piperacilina + Tazobactam",c:["Tazocin","Zosyn"],v:["EV"],e:["diarreia","nefrotoxicidade (com vancomicina)"],i:["pneumonia hospitalar","sepse","infecções abdominais","neutropenia febril"],g:"Antibiótico"},
+{n:"Vancomicina",p:"Vancomicina",c:["Vancocina","Vancomicina"],v:["EV","VO (C. diff)"],e:["nefrotoxicidade","ototoxicidade","síndrome do homem vermelho"],i:["MRSA","C. difficile","endocardite","meningite por gram-positivo"],g:"Antibiótico"},
+{n:"Teicoplanina",p:"Teicoplanina",c:["Targocid"],v:["EV","IM"],e:["nefrotoxicidade","flebite"],i:["MRSA","endocardite","infecções graves por gram-positivo"],g:"Antibiótico"},
+{n:"Linezolida",p:"Linezolida",c:["Zyvox","Linezolida"],v:["VO","EV"],e:["trombocitopenia","anemia","síndrome serotoninérgica"],i:["MRSA","VRE","pneumonia por gram-positivo"],g:"Antibiótico"},
+{n:"Daptomicina",p:"Daptomicina",c:["Cubicin"],v:["EV"],e:["miopatia","rabdomiólise","eosinofilia"],i:["bacteremia por MRSA","endocardite","infecções pele"],g:"Antibiótico"},
+{n:"Tigeciclina",p:"Tigeciclina",c:["Tygacil"],v:["EV"],e:["náusea","vômito","hepatotoxicidade"],i:["infecções abdominais","infecções pele","Acinetobacter MDR"],g:"Antibiótico"},
+{n:"Colistina",p:"Colistina (Polimixina E)",c:["Colistin","Colomycin"],v:["EV","Inalatória"],e:["nefrotoxicidade","neurotoxicidade"],i:["Acinetobacter baumannii MDR","Pseudomonas MDR","KPC"],g:"Antibiótico"},
+{n:"Polimixina B",p:"Polimixina B",c:["Polifix","Polymyxin B"],v:["EV"],e:["nefrotoxicidade","neurotoxicidade"],i:["Acinetobacter MDR","KPC","gram-negativo pan-resistente"],g:"Antibiótico"},
+{n:"Sulfametoxazol + Trimetoprim",p:"Sulfametoxazol + Trimetoprim",c:["Bactrim","Sulfatrim","SMZ-TMP"],v:["VO","EV"],e:["fotossensibilidade","hipercalemia","nefrotoxicidade"],i:["IVU","P. jirovecii","toxoplasmose","listeriose","nocardiose"],g:"Antibiótico"},
+{n:"Nitrofurantoína",p:"Nitrofurantoína",c:["Macrodantina","Nitrofur","Furadantina"],v:["VO"],e:["fibrose pulmonar (uso prolongado)","neuropatia","náusea"],i:["IVU não complicada","cistite"],g:"Antibiótico"},
+{n:"Fosfomicina",p:"Fosfomicina",c:["Monuril","Fosfocina"],v:["VO","EV"],e:["diarreia","náusea"],i:["cistite aguda","IVU por ESBL","KPC (combinação)"],g:"Antibiótico"},
+{n:"Doxiciclina",p:"Doxiciclina",c:["Vibramicina","Doxtrat","Doryx"],v:["VO","EV"],e:["fotossensibilidade","esofagite","náusea"],i:["clamídia","riquetsiose","malária","pneumonia","lyme"],g:"Antibiótico"},
+{n:"Tetraciclina",p:"Tetraciclina",c:["Tetrex","Tetracyklin"],v:["VO"],e:["fotossensibilidade","coloração dentária (crianças)","nefrotoxicidade"],i:["acne","H. pylori","cólera","clamídia"],g:"Antibiótico"},
+{n:"Cloranfenicol",p:"Cloranfenicol",c:["Cloranfenicol","Chloramphénicol"],v:["VO","EV"],e:["aplasia medular","síndrome cinzenta (neonato)"],i:["meningite (falta de alternativa)","tifo","abscesso cerebral"],g:"Antibiótico"},
+{n:"Rifampicina",p:"Rifampicina",c:["Rifaldin","Rimactane"],v:["VO","EV"],e:["hepatotoxicidade","interações medicamentosas","coloração alaranjada de fluidos"],i:["tuberculose","hanseníase","profilaxia meningococo","MRSA (combinação)"],g:"Antibiótico"},
+{n:"Isoniazida",p:"Isoniazida",c:["Isoniazida","INH"],v:["VO","EV","IM"],e:["hepatotoxicidade","neuropatia periférica","lupus-like"],i:["tuberculose","profilaxia TB latente"],g:"Antibiótico"},
+{n:"Pirazinamida",p:"Pirazinamida",c:["Pirazinamida","PZA"],v:["VO"],e:["hepatotoxicidade","hiperuricemia","artralgia"],i:["tuberculose (fase inicial)"],g:"Antibiótico"},
+{n:"Etambutol",p:"Etambutol",c:["Etambutol","EMB"],v:["VO"],e:["neurite óptica","hiperuricemia"],i:["tuberculose"],g:"Antibiótico"},
+/* ══ ANTIFÚNGICO ══ */
+{n:"Fluconazol",p:"Fluconazol",c:["Zoltec","Zoflu","Zocon"],v:["VO","EV"],e:["hepatotoxicidade","prolongamento QTc","interações"],i:["candidíase","criptococose","profilaxia em imunossuprimidos"],g:"Antifúngico"},
+{n:"Itraconazol",p:"Itraconazol",c:["Sporanox","Itranax"],v:["VO"],e:["hepatotoxicidade","insuficiência cardíaca","interações"],i:["aspergilose","histoplasmose","onicomicose"],g:"Antifúngico"},
+{n:"Voriconazol",p:"Voriconazol",c:["Vfend","Voriconazol"],v:["VO","EV"],e:["distúrbios visuais","fotossensibilidade","hepatotoxicidade"],i:["aspergilose invasiva","candidemia refratária","fusariose"],g:"Antifúngico"},
+{n:"Posaconazol",p:"Posaconazol",c:["Noxafil"],v:["VO","EV"],e:["prolongamento QTc","hepatotoxicidade"],i:["profilaxia em neutropenia","mucormicose","aspergilose refratária"],g:"Antifúngico"},
+{n:"Anfotericina B lipossomal",p:"Anfotericina B lipossomal",c:["Ambisome"],v:["EV"],e:["nefrotoxicidade (menor que conv.)","hipocalemia","febre"],i:["aspergilose","candidemia","criptococose","mucormicose"],g:"Antifúngico"},
+{n:"Anfotericina B convencional",p:"Anfotericina B desoxicolato",c:["Fungizone","Anfotericina B"],v:["EV"],e:["nefrotoxicidade grave","hipocalemia","febre","calafrios"],i:["infecções fúngicas graves (recurso)"],g:"Antifúngico"},
+{n:"Caspofungina",p:"Caspofungina",c:["Cancidas"],v:["EV"],e:["flebite","hepatotoxicidade","febre"],i:["candidemia","aspergilose refratária","neutropenia febril"],g:"Antifúngico"},
+{n:"Micafungina",p:"Micafungina",c:["Mycamine"],v:["EV"],e:["hepatotoxicidade","flebite"],i:["candidemia","profilaxia em TMO"],g:"Antifúngico"},
+{n:"Nistatina",p:"Nistatina",c:["Micostatin","Nistatina"],v:["VO","Tópico"],e:["náusea","vômito"],i:["candidíase oral","candidíase intestinal"],g:"Antifúngico"},
+/* ══ ANTIVIRAL ══ */
+{n:"Aciclovir",p:"Aciclovir",c:["Zovirax","Aciclovir"],v:["VO","EV","Tópico"],e:["nefrotoxicidade (EV rápido)","cefaleia"],i:["herpes simplex","varicela","herpes zoster"],g:"Antiviral"},
+{n:"Valaciclovir",p:"Valaciclovir",c:["Valtrex","Valaciclovir"],v:["VO"],e:["cefaleia","náusea"],i:["herpes labial","genital","varicela","zoster"],g:"Antiviral"},
+{n:"Ganciclovir",p:"Ganciclovir",c:["Cymevene"],v:["EV"],e:["mielossupressão","nefrotoxicidade"],i:["CMV em imunossuprimidos"],g:"Antiviral"},
+{n:"Oseltamivir",p:"Oseltamivir",c:["Tamiflu"],v:["VO"],e:["náusea","vômito"],i:["influenza A e B","H1N1"],g:"Antiviral"},
+{n:"Tenofovir",p:"Tenofovir",c:["Viread","TDF"],v:["VO"],e:["nefrotoxicidade","desmineralização óssea"],i:["HIV","hepatite B"],g:"Antiviral"},
+/* ══ RESPIRATÓRIO ══ */
+{n:"Salbutamol",p:"Salbutamol",c:["Aerolin","Ventolin","Aerosolin"],v:["Inalatória","EV"],e:["taquicardia","tremor","hipocalemia"],i:["asma","DPOC","broncoespasmo","hipercalemia"],g:"Respiratório"},
+{n:"Fenoterol",p:"Fenoterol",c:["Berotec"],v:["Inalatória"],e:["taquicardia","tremor"],i:["asma","broncoespasmo"],g:"Respiratório"},
+{n:"Salmeterol",p:"Salmeterol",c:["Serevent"],v:["Inalatória"],e:["taquicardia","hipocalemia"],i:["DPOC","asma (manutenção)"],g:"Respiratório"},
+{n:"Formoterol",p:"Formoterol",c:["Foradil","Oxis"],v:["Inalatória"],e:["taquicardia","tremor"],i:["DPOC","asma (manutenção)"],g:"Respiratório"},
+{n:"Ipratrópio",p:"Ipratrópio",c:["Atrovent"],v:["Inalatória"],e:["boca seca","retenção urinária"],i:["DPOC","asma","broncoespasmo"],g:"Respiratório"},
+{n:"Tiotrópio",p:"Tiotrópio",c:["Spiriva"],v:["Inalatória"],e:["boca seca","retenção urinária"],i:["DPOC (manutenção)"],g:"Respiratório"},
+{n:"Budesonida",p:"Budesonida",c:["Pulmicort","Rhinocort","Budecort"],v:["Inalatória"],e:["candidíase oral","disfonia"],i:["asma","DPOC"],g:"Respiratório"},
+{n:"Fluticasona",p:"Fluticasona",c:["Flixotide","Flixonase"],v:["Inalatória"],e:["candidíase oral","supressão adrenal"],i:["asma","rinite alérgica"],g:"Respiratório"},
+{n:"Beclometasona",p:"Beclometasona",c:["Clenil","Beclovent"],v:["Inalatória"],e:["candidíase oral","disfonia"],i:["asma","rinite"],g:"Respiratório"},
+{n:"Formoterol + Budesonida",p:"Budesonida + Formoterol",c:["Symbicort","Alenia"],v:["Inalatória"],e:["candidíase oral","taquicardia"],i:["asma","DPOC"],g:"Respiratório"},
+{n:"Salmeterol + Fluticasona",p:"Fluticasona + Salmeterol",c:["Seretide","Advair"],v:["Inalatória"],e:["candidíase oral","taquicardia"],i:["asma","DPOC"],g:"Respiratório"},
+{n:"Bromexina",p:"Bromexina",c:["Bisolvon"],v:["VO"],e:["náusea","vômito"],i:["secreção respiratória"],g:"Respiratório"},
+{n:"Acetilcisteína",p:"Acetilcisteína",c:["Fluimucil","Mucomyst","NAC"],v:["VO","Inalatória","EV"],e:["náusea","broncoespasmo (inalatório)"],i:["muco espesso","intoxicação por paracetamol","contraste iodado"],g:"Respiratório"},
+{n:"Ambroxol",p:"Ambroxol",c:["Mucosolvan","Ambrobene"],v:["VO","Inalatória"],e:["náusea","diarreia"],i:["expectoração","muco espesso"],g:"Respiratório"},
+{n:"Loratadina",p:"Loratadina",c:["Claritin","Loranil","Histadin"],v:["VO"],e:["sonolência leve (raro)"],i:["rinite alérgica","urticária","alergia"],g:"Respiratório"},
+{n:"Desloratadina",p:"Desloratadina",c:["Desalex","Desal"],v:["VO"],e:["cefaleia","boca seca"],i:["rinite alérgica","urticária"],g:"Respiratório"},
+{n:"Fexofenadina",p:"Fexofenadina",c:["Allegra","Fexofenadin"],v:["VO"],e:["cefaleia (raro)"],i:["rinite alérgica","urticária"],g:"Respiratório"},
+{n:"Cetirizina",p:"Cetirizina",c:["Zyrtec","Cetrizin","Allernon"],v:["VO"],e:["sonolência"],i:["rinite alérgica","urticária","prurido"],g:"Respiratório"},
+{n:"Dexametasona",p:"Dexametasona",c:["Decadron","Dexametasona"],v:["EV","IM","VO"],e:["hiperglicemia","imunossupressão","osteoporose","psicose"],i:["edema cerebral","anafilaxia","SARS-CoV-2 grave","laringite","crup","NVPO"],g:"Respiratório"},
+{n:"Aminofilina",p:"Aminofilina",c:["Aminofilina","Teofilina"],v:["EV","VO"],e:["taquicardia","convulsão","náusea","janela terapêutica estreita"],i:["broncoespasmo","asma aguda","DPOC exacerbação","apneia neonatal"],g:"Respiratório"},
+/* ══ CARDIOVASCULAR ══ */
+{n:"Hidroclorotiazida",p:"Hidroclorotiazida",c:["Clorana","HCT"],v:["VO"],e:["hipocalemia","hiperglicemia","hiperuricemia"],i:["hipertensão","edema","insuficiência cardíaca"],g:"Cardiovascular"},
+{n:"Clortalidona",p:"Clortalidona",c:["Higrotona"],v:["VO"],e:["hipocalemia","hiperglicemia"],i:["hipertensão","edema"],g:"Cardiovascular"},
+{n:"Furosemida",p:"Furosemida",c:["Lasix","Furosemida"],v:["EV","VO","IM"],e:["hipocalemia","hipotensão","ototoxicidade (dose alta)"],i:["edema","insuficiência cardíaca","hipertensão","hipercalcemia"],g:"Cardiovascular"},
+{n:"Espironolactona",p:"Espironolactona",c:["Aldactone","Espironolactona"],v:["VO"],e:["hipercalemia","ginecomastia"],i:["insuficiência cardíaca","hiperaldosteronismo","ascite"],g:"Cardiovascular"},
+{n:"Captopril",p:"Captopril",c:["Capoten","Captopril"],v:["VO","SL"],e:["tosse seca","hipotensão","angioedema","hipercalemia"],i:["hipertensão (crise hipertensiva SL)","insuficiência cardíaca","nefropatia diabética"],g:"Cardiovascular"},
+{n:"Enalapril",p:"Enalapril",c:["Renitec","Vasopril","Enalapril"],v:["VO","EV"],e:["tosse seca","hipercalemia","angioedema"],i:["hipertensão","insuficiência cardíaca","nefropatia diabética"],g:"Cardiovascular"},
+{n:"Ramipril",p:"Ramipril",c:["Triatec","Naprix"],v:["VO"],e:["tosse seca","hipercalemia","angioedema"],i:["hipertensão","insuficiência cardíaca","pós-IAM","nefroproteção"],g:"Cardiovascular"},
+{n:"Losartana",p:"Losartana",c:["Cozaar","Aradois","Losartana"],v:["VO"],e:["hipotensão","hipercalemia"],i:["hipertensão","nefropatia diabética","insuficiência cardíaca"],g:"Cardiovascular"},
+{n:"Valsartana",p:"Valsartana",c:["Diovan","Valsartana"],v:["VO"],e:["hipotensão","hipercalemia"],i:["hipertensão","insuficiência cardíaca","pós-IAM"],g:"Cardiovascular"},
+{n:"Verapamil",p:"Verapamil",c:["Dilacoron","Isoptin","Verapamil"],v:["VO","EV"],e:["bradicardia","constipação","bloqueio AV"],i:["arritmia supraventricular","hipertensão","angina"],g:"Cardiovascular"},
+{n:"Diltiazem",p:"Diltiazem",c:["Cardizem","Diltiazem"],v:["VO","EV"],e:["bradicardia","bloqueio AV","hipotensão"],i:["fibrilação atrial","flutter atrial","angina","hipertensão"],g:"Cardiovascular"},
+{n:"Amlodipino",p:"Amlodipino",c:["Norvasc","Pressat","Amlodipina"],v:["VO"],e:["edema periférico","cefaleia","rubor"],i:["hipertensão","angina"],g:"Cardiovascular"},
+{n:"Nifedipino",p:"Nifedipino",c:["Adalat","Oxcard"],v:["VO"],e:["edema periférico","rubor","hipotensão reflexa"],i:["hipertensão","angina","Raynaud"],g:"Cardiovascular"},
+{n:"Isossorbida",p:"Mononitrato de isossorbida",c:["Monocordil","Imdur"],v:["VO"],e:["hipotensão","cefaleia","tolerância"],i:["angina (manutenção)","insuficiência cardíaca"],g:"Cardiovascular"},
+{n:"Nitroglicerina",p:"Nitroglicerina",c:["Tridil","Nitronal","Nitroderm"],v:["EV","SL","Transdérmico"],e:["hipotensão","cefaleia","metemoglobinemia (alta dose)"],i:["angina aguda","edema agudo de pulmão","crise hipertensiva"],g:"Cardiovascular"},
+{n:"Nitroprussiato de sódio",p:"Nitroprussiato de sódio",c:["Nipride","Nitroprusseto"],v:["EV"],e:["hipotensão grave","toxicidade por cianeto"],i:["crise hipertensiva grave","insuficiência cardíaca descompensada"],g:"Cardiovascular"},
+{n:"Amiodarona",p:"Amiodarona",c:["Ancoron","Atlansil","Miodaron"],v:["EV","VO"],e:["toxicidade pulmonar","tireoideopatia","fotossensibilidade","hepatotoxicidade"],i:["fibrilação ventricular","taquicardia ventricular","FA"],g:"Cardiovascular"},
+{n:"Sotalol",p:"Sotalol",c:["Sotacor","Sotalex"],v:["VO","EV"],e:["prolongamento QTc","bradicardia","torsades de pointes"],i:["arritmias ventriculares","FA","flutter atrial"],g:"Cardiovascular"},
+{n:"Propafenona",p:"Propafenona",c:["Rhythmonorm","Propafenona"],v:["VO","EV"],e:["bradiarritmia","pró-arrítmico","broncospasmo"],i:["FA (reversão)","TSV","arritmias ventriculares"],g:"Cardiovascular"},
+{n:"Adenosina",p:"Adenosina",c:["Adenocor","Adenocard"],v:["EV (bolus rápido)"],e:["rubor","dispneia transitória","broncoespasmo"],i:["TSVP (reversão)","diagnóstico de arritmias"],g:"Cardiovascular"},
+{n:"Digoxina",p:"Digoxina",c:["Lanoxin","Digoxina"],v:["VO","EV"],e:["intoxicação digitálica","náusea","arritmia","visão amarelada"],i:["insuficiência cardíaca","fibrilação atrial (controle de frequência)"],g:"Cardiovascular"},
+{n:"Atenolol",p:"Atenolol",c:["Tenormin","Atenolol"],v:["VO"],e:["bradicardia","broncoespasmo","fadiga"],i:["hipertensão","angina","arritmia","pós-IAM"],g:"Cardiovascular"},
+{n:"Metoprolol",p:"Metoprolol",c:["Seloken","Lopressor","Metoprolol"],v:["VO","EV"],e:["bradicardia","hipotensão","broncoespasmo"],i:["hipertensão","angina","insuficiência cardíaca","FA","pós-IAM"],g:"Cardiovascular"},
+{n:"Carvedilol",p:"Carvedilol",c:["Coreg","Cardilol","Dilatrend"],v:["VO"],e:["bradicardia","hipotensão","tontura"],i:["insuficiência cardíaca","hipertensão","pós-IAM"],g:"Cardiovascular"},
+{n:"Propranolol",p:"Propranolol",c:["Inderal","Propranolol"],v:["VO","EV"],e:["bradicardia","broncoespasmo","hipoglicemia mascarada"],i:["hipertensão","arritmia","tireotoxicose","hemorragia varicosa","enxaqueca"],g:"Cardiovascular"},
+{n:"Bisoprolol",p:"Bisoprolol",c:["Concor","Bisoprolol"],v:["VO"],e:["bradicardia","hipotensão"],i:["insuficiência cardíaca","hipertensão","angina"],g:"Cardiovascular"},
+{n:"Dobutamina",p:"Dobutamina",c:["Dobutamina","Dobutrex"],v:["EV (infusão)"],e:["taquicardia","arritmia","isquemia"],i:["choque cardiogênico","insuficiência cardíaca descompensada"],g:"Cardiovascular"},
+{n:"Dopamina",p:"Dopamina",c:["Dopamina","Revivan"],v:["EV (infusão)"],e:["taquicardia","arritmia","isquemia periférica"],i:["choque","hipotensão","suporte hemodinâmico"],g:"Cardiovascular"},
+{n:"Noradrenalina",p:"Noradrenalina",c:["Norepinefrina","Levophed"],v:["EV (infusão)"],e:["isquemia periférica","taquicardia","hipertensão"],i:["choque séptico","choque vasoplégico"],g:"Cardiovascular"},
+{n:"Adrenalina",p:"Adrenalina (Epinefrina)",c:["Adrenalina","Epinefrina","EpiPen"],v:["EV","IM","SC","Inalatória"],e:["taquicardia","arritmia","isquemia"],i:["anafilaxia","parada cardiorrespiratória","broncoespasmo grave","crup"],g:"Cardiovascular"},
+{n:"Vasopressina",p:"Vasopressina (ADH)",c:["Pitressin","Vasopressin"],v:["EV (infusão)"],e:["isquemia mesentérica","hiponatremia"],i:["choque séptico (adjuvante)","varizes esofágicas","diabetes insipidus"],g:"Cardiovascular"},
+{n:"Sinvastatina",p:"Sinvastatina",c:["Zocor","Sinvacor","Sinvastatina"],v:["VO"],e:["mialgia","rabdomiólise","hepatotoxicidade"],i:["hipercolesterolemia","prevenção cardiovascular"],g:"Cardiovascular"},
+{n:"Atorvastatina",p:"Atorvastatina",c:["Lipitor","Atorva","Citalor"],v:["VO"],e:["mialgia","hepatotoxicidade"],i:["hipercolesterolemia","prevenção cardiovascular"],g:"Cardiovascular"},
+{n:"Rosuvastatina",p:"Rosuvastatina",c:["Crestor","Rosuca"],v:["VO"],e:["mialgia","proteinúria"],i:["hipercolesterolemia","prevenção cardiovascular"],g:"Cardiovascular"},
+/* ══ ANTICOAGULANTE / ANTIAGREGANTE / TROMBOLÍTICO ══ */
+{n:"Heparina",p:"Heparina sódica",c:["Liquemine","Heparina"],v:["EV","SC"],e:["sangramento","trombocitopenia induzida por heparina (HIT)"],i:["trombose","TEP","TVP","síndrome coronariana aguda"],g:"Anticoagulante"},
+{n:"Enoxaparina",p:"Enoxaparina",c:["Clexane","Enoxarina"],v:["SC"],e:["sangramento","hematoma","HIT (raro)"],i:["profilaxia TEP/TVP","síndrome coronariana aguda","tratamento TVP/TEP"],g:"Anticoagulante"},
+{n:"Fondaparinux",p:"Fondaparinux",c:["Arixtra"],v:["SC"],e:["sangramento","anemia"],i:["profilaxia TEP/TVP","síndrome coronariana aguda sem ST"],g:"Anticoagulante"},
+{n:"Varfarina",p:"Varfarina",c:["Marevan","Coumadin"],v:["VO"],e:["sangramento","necrose cutânea","teratogênica"],i:["fibrilação atrial","prótese valvar","TEP/TVP","trombofilia"],g:"Anticoagulante"},
+{n:"Rivaroxabana",p:"Rivaroxabana",c:["Xarelto"],v:["VO"],e:["sangramento","elevação de transaminases"],i:["FA não valvar","profilaxia/tratamento TEP/TVP","SCA"],g:"Anticoagulante"},
+{n:"Apixabana",p:"Apixabana",c:["Eliquis"],v:["VO"],e:["sangramento"],i:["FA não valvar","profilaxia/tratamento TEP/TVP"],g:"Anticoagulante"},
+{n:"Dabigatrana",p:"Dabigatrana",c:["Pradaxa"],v:["VO"],e:["sangramento","dispepsia"],i:["FA não valvar","profilaxia TEP/TVP"],g:"Anticoagulante"},
+{n:"AAS",p:"Ácido acetilsalicílico",c:["Aspirina","AAS Protect","Melhoral"],v:["VO"],e:["sangramento","gastrite","broncoespasmo"],i:["antiagregante plaquetário","angina","pós-IAM","febre","dor"],g:"Antiagregante"},
+{n:"Clopidogrel",p:"Clopidogrel",c:["Plavix","Iscover","Plagrel"],v:["VO"],e:["sangramento","equimose"],i:["antiagregante plaquetário","SCA","pós-stent","AVC/AIT"],g:"Antiagregante"},
+{n:"Ticagrelor",p:"Ticagrelor",c:["Brilique","Brilinta"],v:["VO"],e:["sangramento","dispneia","bradicardia"],i:["SCA","pós-stent"],g:"Antiagregante"},
+{n:"Prasugrel",p:"Prasugrel",c:["Efient"],v:["VO"],e:["sangramento (maior risco)"],i:["SCA","pós-stent (ICP)"],g:"Antiagregante"},
+{n:"Alteplase",p:"Alteplase (rt-PA)",c:["Actilyse"],v:["EV"],e:["sangramento grave","sangramento intracraniano"],i:["AVC isquêmico agudo","IAM","TEP maciço"],g:"Trombolítico"},
+{n:"Tenecteplase",p:"Tenecteplase",c:["Metalyse"],v:["EV"],e:["sangramento grave","sangramento intracraniano"],i:["IAM com supradesnivelamento de ST"],g:"Trombolítico"},
+{n:"Estreptoquinase",p:"Estreptoquinase",c:["Streptase"],v:["EV"],e:["sangramento","hipotensão","reação alérgica"],i:["IAM (recurso)","TVP/TEP (recurso)"],g:"Trombolítico"},
+{n:"Protamina",p:"Sulfato de protamina",c:["Protamina"],v:["EV"],e:["hipotensão","bradicardia","reação alérgica"],i:["reversão da heparina"],g:"Anticoagulante"},
+/* ══ DIGESTÓRIO ══ */
+{n:"Omeprazol",p:"Omeprazol",c:["Losec","Peprazol","Omed"],v:["VO","EV"],e:["cefaleia","hipomagnesemia","infecção por C. diff (uso prolongado)"],i:["úlcera péptica","refluxo","profilaxia de úlcera de estresse"],g:"Digestório"},
+{n:"Pantoprazol",p:"Pantoprazol",c:["Pantozol","Tecta","Pantoprazol"],v:["VO","EV"],e:["cefaleia","hipomagnesemia"],i:["úlcera péptica","refluxo","sangramento GI alto"],g:"Digestório"},
+{n:"Esomeprazol",p:"Esomeprazol",c:["Nexium","Esomez"],v:["VO","EV"],e:["cefaleia","hipomagnesemia"],i:["úlcera","refluxo","H. pylori"],g:"Digestório"},
+{n:"Ranitidina",p:"Ranitidina",c:["Antak","Ranitidina"],v:["VO","EV","IM"],e:["cefaleia","confusão (IV em idosos)"],i:["úlcera","refluxo","hipersecreção gástrica"],g:"Digestório"},
+{n:"Metoclopramida",p:"Metoclopramida",c:["Plasil","Metoclopramida"],v:["VO","EV"],e:["efeito extrapiramidal","sonolência","discinesia tardia"],i:["náusea","vômito","gastroparesia","refluxo"],g:"Digestório"},
+{n:"Ondansetrona",p:"Ondansetrona",c:["Zofran","Vonau","Nausedron"],v:["VO","EV"],e:["cefaleia","constipação","prolongamento QTc"],i:["náusea","vômito induzido por quimioterapia","NVPO"],g:"Digestório"},
+{n:"Granisetrona",p:"Granisetrona",c:["Kytril"],v:["VO","EV"],e:["cefaleia","constipação"],i:["náusea por quimioterapia","NVPO"],g:"Digestório"},
+{n:"Bromoprida",p:"Bromoprida",c:["Digesan","Bromoprida"],v:["VO","EV","IM"],e:["efeito extrapiramidal","sonolência"],i:["náusea","vômito","refluxo","gastroparesia"],g:"Digestório"},
+{n:"Domperidona",p:"Domperidona",c:["Motilium","Domperidona"],v:["VO"],e:["prolongamento QTc","galactorreia"],i:["náusea","gastroparesia","refluxo"],g:"Digestório"},
+{n:"Sucralfato",p:"Sucralfato",c:["Sucrafilm","Ucralin","Sucralfato"],v:["VO"],e:["constipação"],i:["proteção gástrica","úlcera péptica","úlcera de estresse"],g:"Digestório"},
+{n:"Lactulose",p:"Lactulose",c:["Lactulona","Duphalac"],v:["VO"],e:["flatulência","diarreia","cólica"],i:["constipação","encefalopatia hepática"],g:"Digestório"},
+{n:"Bisacodil",p:"Bisacodil",c:["Dulcolax","Bisacodil"],v:["VO","Retal"],e:["cólica","diarreia"],i:["constipação","preparo intestinal"],g:"Digestório"},
+{n:"Senna",p:"Sennosídeo",c:["Purgafen","Senokot","Sen"],v:["VO"],e:["cólica","diarreia","melanose coli"],i:["constipação"],g:"Digestório"},
+{n:"Escopolamina",p:"Escopolamina",c:["Buscopan","Buscofen"],v:["VO","EV","IM"],e:["boca seca","taquicardia","retenção urinária"],i:["cólica","espasmo intestinal","náusea cinetose"],g:"Digestório"},
+{n:"Loperamida",p:"Loperamida",c:["Imosec","Loperamida","Lopermida"],v:["VO"],e:["constipação","megacólon (não usar em infecção)"],i:["diarreia aguda"],g:"Digestório"},
+{n:"Vancomicina VO",p:"Vancomicina oral",c:["Vancocina VO"],v:["VO"],e:["náusea"],i:["C. difficile grave","C. difficile recorrente"],g:"Digestório"},
+{n:"Fidaxomicina",p:"Fidaxomicina",c:["Dificid"],v:["VO"],e:["náusea","diarreia"],i:["C. difficile (preferencial para recidiva)"],g:"Digestório"},
+/* ══ ENDÓCRINO ══ */
+{n:"Levotiroxina",p:"Levotiroxina",c:["Synthroid","Puran T4","Euthyrox"],v:["VO"],e:["taquicardia","osteoporose (excessiva)"],i:["hipotireoidismo"],g:"Endócrino"},
+{n:"Propiltiouracila",p:"Propiltiouracila",c:["Propiltiouracila","PTU"],v:["VO"],e:["hepatotoxicidade","agranulocitose"],i:["hipertireoidismo","crise tireotóxica"],g:"Endócrino"},
+{n:"Metimazol",p:"Metimazol",c:["Tapazol","Metimazol"],v:["VO"],e:["agranulocitose","hepatotoxicidade"],i:["hipertireoidismo","doença de Graves"],g:"Endócrino"},
+{n:"Metformina",p:"Metformina",c:["Glifage","Glucoformin","Dimefor"],v:["VO"],e:["diarreia","náusea","acidose láctica (rara)"],i:["diabetes tipo 2","síndrome do ovário policístico"],g:"Endócrino"},
+{n:"Glibenclamida",p:"Glibenclamida",c:["Daonil","Euglucon"],v:["VO"],e:["hipoglicemia","ganho de peso"],i:["diabetes tipo 2"],g:"Endócrino"},
+{n:"Glicazida",p:"Glicazida",c:["Diamicron","Glicazida MR"],v:["VO"],e:["hipoglicemia (menor que glibenclamida)"],i:["diabetes tipo 2"],g:"Endócrino"},
+{n:"Glipizida",p:"Glipizida",c:["Minidiab"],v:["VO"],e:["hipoglicemia"],i:["diabetes tipo 2"],g:"Endócrino"},
+{n:"Sitagliptina",p:"Sitagliptina",c:["Januvia"],v:["VO"],e:["nasofaringite","pancreatite (rara)"],i:["diabetes tipo 2"],g:"Endócrino"},
+{n:"Empagliflozina",p:"Empagliflozina",c:["Jardiance"],v:["VO"],e:["infecção genital","poliúria","cetoacidose (rara)"],i:["diabetes tipo 2","insuficiência cardíaca","nefropatia diabética"],g:"Endócrino"},
+{n:"Dapagliflozina",p:"Dapagliflozina",c:["Forxiga"],v:["VO"],e:["infecção genital","poliúria"],i:["diabetes tipo 2","insuficiência cardíaca","nefropatia diabética"],g:"Endócrino"},
+{n:"Insulina Regular",p:"Insulina humana regular",c:["Humulin R","Novolin R","Insulina R"],v:["SC","EV","IM"],e:["hipoglicemia","lipodistrofia"],i:["diabetes","cetoacidose diabética","hipercalemia"],g:"Endócrino"},
+{n:"Insulina NPH",p:"Insulina isófana",c:["Humulin N","Novolin N","Insulina NPH"],v:["SC"],e:["hipoglicemia (pico noturno)","lipodistrofia"],i:["diabetes tipo 1 e 2 (basal)"],g:"Endócrino"},
+{n:"Insulina Glargina",p:"Insulina glargina",c:["Lantus","Basaglar","Toujeo"],v:["SC"],e:["hipoglicemia (menor)","lipodistrofia"],i:["diabetes (basal)"],g:"Endócrino"},
+{n:"Insulina Detemir",p:"Insulina detemir",c:["Levemir"],v:["SC"],e:["hipoglicemia","ganho de peso"],i:["diabetes (basal)"],g:"Endócrino"},
+{n:"Insulina Lispro",p:"Insulina lispro",c:["Humalog","Liprolog"],v:["SC"],e:["hipoglicemia"],i:["diabetes (prandial)"],g:"Endócrino"},
+{n:"Insulina Asparte",p:"Insulina asparte",c:["NovoRapid","Fiasp"],v:["SC","EV"],e:["hipoglicemia"],i:["diabetes (prandial)","cetoacidose"],g:"Endócrino"},
+{n:"Glucagon",p:"Glucagon",c:["GlucaGen","Glucagon"],v:["SC","IM","EV"],e:["náusea","vômito"],i:["hipoglicemia grave","beta-bloqueador toxicidade"],g:"Endócrino"},
+{n:"Hidrocortisona",p:"Hidrocortisona",c:["Solu-Cortef","Hidrocortisona"],v:["EV","IM","VO"],e:["hiperglicemia","imunossupressão","retenção hídrica"],i:["insuficiência adrenal","choque séptico refratário","reação alérgica grave"],g:"Endócrino"},
+{n:"Prednisona",p:"Prednisona",c:["Meticorten","Predicorten","Prednisona"],v:["VO"],e:["hiperglicemia","osteoporose","imunossupressão","ganho de peso"],i:["inflamação","asma grave","LES","artrite reumatoide"],g:"Endócrino"},
+{n:"Prednisolona",p:"Prednisolona",c:["Predsim","Prelone"],v:["VO","EV"],e:["hiperglicemia","imunossupressão"],i:["inflamação","asma grave","transplante"],g:"Endócrino"},
+{n:"Metilprednisolona",p:"Metilprednisolona",c:["Solu-Medrol","Depo-Medrol"],v:["EV","IM"],e:["hiperglicemia","hipertensão","psicose"],i:["pulsoterapia LES/vasculites","ARDS","choque séptico (dose stress)","lesão medular"],g:"Endócrino"},
+/* ══ ANESTÉSICO / SEDAÇÃO ══ */
+{n:"Etomidato",p:"Etomidato",c:["Hypnomidate"],v:["EV"],e:["depressão respiratória","mioclonia","supressão adrenal"],i:["indução anestésica (instável hemodinâmico)","ISR"],g:"Anestésico"},
+{n:"Propofol",p:"Propofol",c:["Diprivan","Propovan"],v:["EV"],e:["depressão respiratória","hipotensão","síndrome de infusão de propofol"],i:["sedação UTI","indução anestésica"],g:"Anestésico"},
+{n:"Cetamina",p:"Cetamina",c:["Ketalar","Ketamine","Ketamin S"],v:["EV","IM"],e:["alucinações","taquicardia","hipertensão","hipersecreção"],i:["indução anestésica","ISR (instável)","broncoespasmo","sedação procedimentos"],g:"Anestésico"},
+{n:"Lidocaína",p:"Lidocaína",c:["Xylestesin","Xylocaine","Lidosterin"],v:["EV","Local","Tópico"],e:["arritmia","toxicidade do SNC","convulsão"],i:["anestesia local","arritmia ventricular","anestesia tópica"],g:"Anestésico"},
+{n:"Bupivacaína",p:"Bupivacaína",c:["Marcaína","Neocaína","Bupicaína"],v:["Local (bloqueio)"],e:["cardiotoxicidade","convulsão","parada cardíaca"],i:["raquianestesia","bloqueio peridural","bloqueio nervoso periférico"],g:"Anestésico"},
+{n:"Ropivacaína",p:"Ropivacaína",c:["Naropin","Ropivacaína"],v:["Local (bloqueio)"],e:["cardiotoxicidade (menor que bupivacaína)","convulsão"],i:["bloqueio peridural","bloqueio nervoso periférico","analgesia pós-operatória"],g:"Anestésico"},
+{n:"Succinilcolina",p:"Succinilcolina",c:["Quelicin","Scoline"],v:["EV"],e:["hipercalemia","hipertermia maligna","bradicardia"],i:["ISR","intubação de emergência"],g:"Anestésico"},
+{n:"Rocurônio",p:"Rocurônio",c:["Esmeron","Zemuron"],v:["EV"],e:["bloqueio neuromuscular prolongado"],i:["intubação orotraqueal","cirurgia","ISR (dose alta)"],g:"Anestésico"},
+{n:"Vecurônio",p:"Vecurônio",c:["Norcuron"],v:["EV"],e:["bloqueio neuromuscular prolongado"],i:["manutenção do bloqueio neuromuscular em UTI/cirurgia"],g:"Anestésico"},
+{n:"Sugamadex",p:"Sugamadex",c:["Bridion"],v:["EV"],e:["bradicardia","reação de hipersensibilidade"],i:["reversão do rocurônio e vecurônio"],g:"Anestésico"},
+{n:"Neostigmina",p:"Neostigmina",c:["Prostigmin","Neostigmine"],v:["EV","IM","SC"],e:["bradicardia","broncoespasmo","aumento de secreções"],i:["reversão de bloqueio neuromuscular","miastenia gravis","íleo paralítico"],g:"Anestésico"},
+{n:"Atropina",p:"Atropina",c:["Atropina","Atropisol"],v:["EV","IM","SC"],e:["taquicardia","boca seca","retenção urinária"],i:["bradicardia","revertir bloqueio colinérgico","pré-medicação anestésica","organofosforados"],g:"Anestésico"},
+/* ══ SORO / ELETRÓLITO ══ */
+{n:"SF 0.9%",p:"Cloreto de sódio 0.9%",c:["Soro Fisiológico","NaCl 0,9%"],v:["EV"],e:["sobrecarga hídrica","acidose hiperclorêmica"],i:["hidratação","diluição de medicamentos","choque (reposição volêmica)"],g:"Soro"},
+{n:"SG 5%",p:"Glicose 5%",c:["Soro Glicosado","Glicose 5%"],v:["EV"],e:["hiperglicemia","hiponatremia de diluição"],i:["hidratação","energia","hipoglicemia leve"],g:"Soro"},
+{n:"SG 50%",p:"Glicose hipertônica 50%",c:["Glicose 50%","Glicose hipertônica"],v:["EV (central)"],e:["hiperglicemia","flebite","hipertonicidade"],i:["hipoglicemia grave","encefalopatia hepática","energia concentrada"],g:"Soro"},
+{n:"Ringer Lactato",p:"Solução de Ringer Lactato",c:["Solução de Hartmann","Ringer com Lactato"],v:["EV"],e:["alcalose","sobrecarga hídrica","hipernatremia"],i:["reposição volêmica","trauma","queimados","cirurgia"],g:"Soro"},
+{n:"NaCl 3%",p:"Cloreto de sódio 3%",c:["Salina Hipertônica 3%"],v:["EV"],e:["hipernatremia","edema","desmielinização osmótica"],i:["hiponatremia grave sintomática","edema cerebral"],g:"Soro"},
+{n:"Cloreto de Potássio",p:"Cloreto de potássio",c:["KCl 19.1%","Cloreto de Potássio"],v:["EV (diluído)"],e:["hipercalemia","parada cardíaca (rápido IV)","queimação venosa"],i:["hipocalemia","reposição de potássio"],g:"Soro"},
+{n:"Gluconato de Cálcio",p:"Gluconato de cálcio",c:["Gluconato de Cálcio 10%"],v:["EV"],e:["bradicardia (rápido)","calcinose"],i:["hipocalcemia","hipercalemia (proteção cardíaca)","hipermagnesemia","overdose de bloqueador de canal de cálcio"],g:"Soro"},
+{n:"Sulfato de Magnésio",p:"Sulfato de magnésio",c:["Sulfato de Magnésio","MgSO4"],v:["EV","IM"],e:["hipotensão","depressão respiratória","bloqueio neuromuscular"],i:["eclâmpsia","pré-eclâmpsia","arritmia (torsades)","hipomagnesemia","asma refratária"],g:"Soro"},
+{n:"Bicarbonato de Sódio",p:"Bicarbonato de sódio",c:["NaHCO3","Bicarbonato"],v:["EV","VO"],e:["alcalose metabólica","hipernatremia","hipocalcemia"],i:["acidose metabólica grave","hipercalemia","intoxicação por TCA","alcalinização urinária"],g:"Soro"},
+{n:"Albumina humana",p:"Albumina humana",c:["Albumina 20%","Albumina 4%"],v:["EV"],e:["edema","sobrecarga circulatória","reação alérgica"],i:["ascite (paracentese grande)","SBP (profilaxia)","síndrome hepatorrenal","albumina < 2 g/dL sintomática"],g:"Soro"},
+/* ══ NEUROLOGIA ══ */
+{n:"Labetalol",p:"Labetalol",c:["Trandate"],v:["EV","VO"],e:["bradicardia","hipotensão","broncoespasmo"],i:["crise hipertensiva","hipertensão na gestação","dissecção aórtica"],g:"Cardiovascular"},
+{n:"Manitol",p:"Manitol",c:["Manitol 20%","Osmitrol"],v:["EV"],e:["hipernatremia","desidratação","insuficiência renal"],i:["hipertensão intracraniana","edema cerebral","glaucoma agudo"],g:"Neurologia"},
+{n:"Nimodipino",p:"Nimodipino",c:["Nimotop"],v:["VO","EV"],e:["hipotensão","bradicardia"],i:["vasoespasmo pós-HSA (hemorragia subaracnoídea)"],g:"Neurologia"},
+{n:"Alteplase (AVC)",p:"Alteplase",c:["Actilyse"],v:["EV"],e:["sangramento intracraniano"],i:["AVC isquêmico agudo < 4,5h"],g:"Neurologia"},
+{n:"Fisostigmina",p:"Fisostigmina",c:["Antilirium"],v:["EV","IM"],e:["broncoespasmo","bradicardia","convulsão"],i:["reversão síndrome anticolinérgica central"],g:"Neurologia"},
+{n:"Piridostigmina",p:"Piridostigmina",c:["Mestinon"],v:["VO","EV"],e:["cólica","diarreia","aumento de secreções"],i:["miastenia gravis"],g:"Neurologia"},
+{n:"Imunoglobulina IV",p:"Imunoglobulina humana IV",c:["Kiovig","Privigen","Octagram"],v:["EV"],e:["cefaleia","reação infusional","trombose"],i:["Guillain-Barré","miastenia gravis (crise)","ITP","déficit imunológico"],g:"Neurologia"},
+/* ══ UROLOGIA / NEFRO ══ */
+{n:"Tansulosina",p:"Tansulosina",c:["Secotex","Mecir"],v:["VO"],e:["hipotensão ortostática","ejaculação retrógrada"],i:["hiperplasia prostática benigna","retenção urinária"],g:"Urologia"},
+{n:"Finasterida",p:"Finasterida",c:["Proscar","Propecia"],v:["VO"],e:["disfunção erétil","ginecomastia"],i:["hiperplasia prostática","alopecia"],g:"Urologia"},
+{n:"Oxibutinina",p:"Oxibutinina",c:["Retemic","Incontinol"],v:["VO"],e:["boca seca","constipação","confusão"],i:["bexiga hiperativa","incontinência urinária"],g:"Urologia"},
+{n:"Solifenacina",p:"Solifenacina",c:["Vesicare"],v:["VO"],e:["boca seca","constipação"],i:["bexiga hiperativa"],g:"Urologia"},
+/* ══ HEMATOLOGIA / ONCOLOGIA ══ */
+{n:"Ácido fólico",p:"Ácido fólico",c:["Folacin","Folicil","Vitafolin"],v:["VO","EV"],e:["raro"],i:["anemia megaloblástica","gestação (prevenção)","metotrexato (leucovorina)"],g:"Hematologia"},
+{n:"Sulfato ferroso",p:"Sulfato ferroso",c:["Fer-In-Sol","Sulfato Ferroso","Noripurum"],v:["VO"],e:["constipação","náusea","fezes escuras"],i:["anemia ferropriva"],g:"Hematologia"},
+{n:"Ferro endovenoso",p:"Ferro sacarose / Carboximal tose",c:["Noripurum EV","Ferinject"],v:["EV"],e:["reação de hipersensibilidade","hipotensão"],i:["anemia ferropriva (VO não tolerado)","DRC","IC"],g:"Hematologia"},
+{n:"Eritropoetina",p:"Eritropoetina (EPO)",c:["Eprex","Hemax","Eritromax"],v:["SC","EV"],e:["hipertensão","trombose","pura aplasia eritroide"],i:["anemia da DRC","anemia por quimioterapia"],g:"Hematologia"},
+{n:"Vitamina B12",p:"Cianocobalamina",c:["Cianocobalamina","Bedoz","Rubranova"],v:["VO","IM","EV"],e:["raro (alergias raras)"],i:["anemia megaloblástica","deficiência B12","neuropatia por deficiência"],g:"Hematologia"},
+{n:"Filgrastim",p:"Filgrastim (G-CSF)",c:["Granulokine","Neupogen"],v:["SC","EV"],e:["dor óssea","esplenomegalia","ruptura esplênica"],i:["neutropenia por quimioterapia","TMO","neutropenia congênita"],g:"Hematologia"},
+{n:"Ondansetrona (QT)",p:"Ondansetrona",c:["Zofran","Vonau"],v:["VO","EV"],e:["constipação","prolongamento QTc"],i:["náusea por quimioterapia"],g:"Hematologia"},
+{n:"Dexametasona (QT)",p:"Dexametasona",c:["Decadron"],v:["EV","VO"],e:["hiperglicemia","insônia"],i:["antiemese em quimioterapia","hipersensibilidade","edema por tumor"],g:"Hematologia"},
+{n:"Alopurinol",p:"Alopurinol",c:["Zyloric","Alopurinol"],v:["VO"],e:["síndrome de Stevens-Johnson","hepatotoxicidade","nefrotoxicidade"],i:["gota","hiperuricemia","síndrome de lise tumoral (prevenção)"],g:"Hematologia"},
+{n:"Rasburicase",p:"Rasburicase",c:["Fasturtec"],v:["EV"],e:["hemólise (G6PD)","reação de hipersensibilidade"],i:["hiperuricemia aguda","síndrome de lise tumoral"],g:"Hematologia"},
+/* ══ VITAMINAS / SUPLEMENTOS ══ */
+{n:"Tiamina",p:"Tiamina (vitamina B1)",c:["Benerva","Tiamina"],v:["EV","IM","VO"],e:["reação anafilática (EV rápido, raro)"],i:["deficiência de tiamina","encefalopatia de Wernicke","alcoolismo","síndrome de realimentação"],g:"Vitaminas"},
+{n:"Vitamina K",p:"Fitomenadiona (vitamina K1)",c:["Kanakion","Fitomenadiona"],v:["VO","SC","EV lento","IM"],e:["reação anafilática (IV rápido)","dor IM"],i:["reversão de varfarina","deficiência de vitamina K","hemorragia neonatal"],g:"Vitaminas"},
+{n:"Vitamina D",p:"Colecalciferol (vitamina D3)",c:["Depura","Addera D3","Colecalciferol"],v:["VO"],e:["hipercalcemia","nefrolitíase (excesso)"],i:["deficiência de vitamina D","hipoparatireoidismo","raquitismo","osteoporose"],g:"Vitaminas"},
+{n:"Vitamina C",p:"Ácido ascórbico",c:["Redoxon","Cebion","Vitamina C"],v:["VO","EV"],e:["nefrolitíase (oxalato, altas doses)"],i:["deficiência de vitamina C","escorbuto","suporte imunológico"],g:"Vitaminas"},
+{n:"Calcitriol",p:"Calcitriol (vitamina D ativa)",c:["Rocaltrol","Calcitriol"],v:["VO","EV"],e:["hipercalcemia","hipercalciúria"],i:["hipoparatireoidismo","DRC","osteoporose"],g:"Vitaminas"},
+{n:"Zinco",p:"Sulfato de zinco",c:["Sulfato de Zinco","Zincovit"],v:["VO"],e:["náusea","deficiência de cobre (excesso)"],i:["deficiência de zinco","diarreia infantil","úlceras (tópico)"],g:"Vitaminas"},
+/* ══ ANTÍDOTOS / EMERGÊNCIA ══ */
+{n:"Flumazenil",p:"Flumazenil",c:["Lanexat","Flumazenil"],v:["EV"],e:["convulsão (abstinência BZD)","ressedação"],i:["reversão de benzodiazepínicos","diagnóstico de overdose"],g:"Antídoto"},
+{n:"N-acetilcisteína",p:"N-acetilcisteína",c:["Fluimucil EV","Acetilcisteína EV"],v:["EV","VO"],e:["reação anafilactoide","náusea"],i:["intoxicação por paracetamol","lesão hepática tóxica"],g:"Antídoto"},
+{n:"Carvão ativado",p:"Carvão ativado",c:["Carvão Ativado","Carbomix"],v:["VO","SNG"],e:["aspiração","constipação","vômito"],i:["intoxicação oral (< 1–2h)"],g:"Antídoto"},
+{n:"Atropina (organofosf.)",p:"Atropina",c:["Atropina"],v:["EV","IM"],e:["taquicardia","retenção urinária","boca seca"],i:["intoxicação por organofosforados","bradiarritmias"],g:"Antídoto"},
+{n:"Pralidoxima",p:"Pralidoxima",c:["Contrathion"],v:["EV","IM"],e:["vertigem","visão turva","hipertensão"],i:["intoxicação por organofosforados (reativação da AChE)"],g:"Antídoto"},
+{n:"Deferoxamina",p:"Deferoxamina",c:["Desferal"],v:["EV","IM","SC"],e:["hipotensão","toxicidade pulmonar (uso prolongado)"],i:["intoxicação por ferro","sobrecarga de ferro transfusional"],g:"Antídoto"},
+/* ══ DERMATOLOGIA / TÓPICOS ══ */
+{n:"Mupirocina",p:"Mupirocina",c:["Bactroban","Mupirocina"],v:["Tópico"],e:["ardor local"],i:["infecções de pele por MSSA","descolonização MRSA (nasal)"],g:"Dermatologia"},
+{n:"Nistatina tópica",p:"Nistatina",c:["Mycostatin tópico","Monostat"],v:["Tópico"],e:["irritação"],i:["candidíase cutânea","fraldas","intertrigo"],g:"Dermatologia"},
+{n:"Ácido fusídico",p:"Ácido fusídico",c:["Furacin","Fucidin"],v:["Tópico"],e:["irritação"],i:["infecções cutâneas por MSSA","impetigo"],g:"Dermatologia"},
+{n:"Prometazina",p:"Prometazina",c:["Fenergan","Pamergan"],v:["VO","IM","EV","Retal"],e:["sedação excessiva","efeito extrapiramidal","fotossensibilidade"],i:["alergia","náusea","sedação leve","cinetose"],g:"Dermatologia"},
+];
+
+
+// Normalização para busca
+function normMed(t) {
+  return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+}
+
+function medNoBanco(nome) {
+  const n = normMed(nome);
+  return MED_DB.find(m =>
+    normMed(m.n) === n ||
+    normMed(m.p) === n ||
+    (m.c && m.c.some(c => normMed(c) === n))
+  );
+}
+
+function sugerirMeds(nome) {
+  const n = normMed(nome);
+  if (!n) return [];
+  return MED_DB.filter(m => {
+    const mn = normMed(m.n);
+    const mp = normMed(m.p);
+    const mc = (m.c || []).map(c => normMed(c));
+    return mn.includes(n) || n.includes(mn) ||
+      mp.includes(n) || n.includes(mp) ||
+      mc.some(c => c.includes(n) || n.includes(c)) ||
+      levenshtein(n, mn) <= 3 || levenshtein(n, mp) <= 3 ||
+      mc.some(c => levenshtein(n, c) <= 3);
+  }).slice(0, 6);
+}
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, (_, i) => Array.from({length: n+1}, (_, j) => i === 0 ? j : j === 0 ? i : 0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+// Popover de sugestões
+let _sugPop = null;
+function fecharSugPop() {
+  if (_sugPop) { _sugPop.remove(); _sugPop = null; }
+}
+
+function abrirSugPop(anchor, medNome, patId, medIdx) {
+  fecharSugPop();
+  const sugs = sugerirMeds(medNome);
+  const pop = document.createElement('div');
+  pop.id = 'med-suggest-pop';
+  _sugPop = pop;
+
+  if (sugs.length === 0) {
+    pop.innerHTML = `<div class="med-sug-none">Nenhuma sugestão encontrada</div>`;
+  } else {
+    pop.innerHTML = sugs.map(m => `
+      <div class="med-sug-item" onclick="selecionarSug('${patId}',${medIdx},'${m.n.replace(/'/g,"\\'")}')">
+        <span class="sug-name">${m.n}</span>
+        <span class="sug-sub">${m.p} · ${m.g}</span>
+      </div>`).join('');
+  }
+  document.body.appendChild(pop);
+
+  const rect = anchor.getBoundingClientRect();
+  const pw = pop.offsetWidth || 240;
+  let left = rect.left;
+  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  pop.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  pop.style.left = left + 'px';
+
+  setTimeout(() => document.addEventListener('click', fecharSugPop, {once: true}), 50);
+}
+
+function selecionarSug(patId, medIdx, medNome) {
+  fecharSugPop();
+  const m = medNoBanco(medNome);
+  if (!m) return;
+  // Salvar referência da med do banco no paciente
+  pacientes[patId].meds[medIdx].dbRef = medNome;
+  salvarLS();
+  renderPacientes(); showTab(patId, 'meds');
+}
+
+function buildMedInfoPanel(dbNome) {
+  const m = medNoBanco(dbNome);
+  if (!m) return '';
+  const grupoBadge = `<span class="mip-tag">${m.g}</span>`;
+  const vias = m.v.map(v => `<span class="mip-tag green">${v}</span>`).join(' ');
+  const efeitos = m.e.map(e => `<span class="mip-tag red">${e}</span>`).join(' ');
+  const indicacoes = m.i.map(i => `<span class="mip-tag">${i}</span>`).join(' ');
+  const comerciais = (m.c && m.c.length)
+    ? m.c.map(c => `<span class="mip-tag">${c}</span>`).join(' ')
+    : '<span style="color:var(--muted);font-size:11px">—</span>';
+  return `
+    <div class="med-info-panel">
+      <div class="mip-title">📋 ${m.n} <span style="font-weight:400;font-size:12px;color:var(--muted)">— ${m.p}</span></div>
+      <div class="mip-row"><span class="mip-label">Comercial:</span>${comerciais}</div>
+      <div class="mip-row"><span class="mip-label">Grupo:</span>${grupoBadge}</div>
+      <div class="mip-row"><span class="mip-label">Vias:</span>${vias}</div>
+      <div class="mip-row"><span class="mip-label">Efeitos adv.:</span>${efeitos}</div>
+      <div class="mip-row"><span class="mip-label">Indicações:</span>${indicacoes}</div>
+    </div>`;
+}
+
+function toggleSexoUI() {
+  const cb = document.getElementById('input-sexo');
+  const wrap = document.getElementById('sexo-wrap-label');
+  const icon = document.getElementById('sexo-icon');
+  const lbl = document.getElementById('sexo-label-text');
+  if (!cb) return;
+  if (cb.checked) {
+    wrap && wrap.classList.add('fem');
+    if (icon) icon.textContent = '♀';
+    if (lbl) lbl.textContent = 'Fem.';
+  } else {
+    wrap && wrap.classList.remove('fem');
+    if (icon) icon.textContent = '♂';
+    if (lbl) lbl.textContent = 'Masc.';
+  }
+}
+
+// ════════════════════════════════════════════
+// DATA STORE + PERSISTÊNCIA
+// ════════════════════════════════════════════
+const LS_KEY = 'plantao_pacientes';
+
+function salvarLS() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(pacientes)); } catch(e) {}
+}
+
+function carregarLS() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) pacientes = JSON.parse(raw);
+  } catch(e) { pacientes = {}; }
+}
+
+let pacientes = {};
+let currentPatientId = null;
+let admCurrentStep = 0;
+let admAnswers = {};
+
+const TOTAL_STEPS = 5;
+
+// ════════════════════════════════════════════
+// PATIENT MANAGEMENT
+// ════════════════════════════════════════════
+function criarPaciente() {
+  const leito = document.getElementById('input-leito').value.trim();
+  const nome = document.getElementById('input-nome').value.trim();
+  if (!leito || !nome) { alert('Preencha o leito e o nome do paciente.'); return; }
+  const sexoEl = document.getElementById('input-sexo');
+  const feminino = sexoEl ? sexoEl.checked : false;
+  const id = Date.now().toString();
+  pacientes[id] = { id, leito, nome, feminino, admissaoFeita: false, admissaoTexto: '', meds: [], notes: [] };
+  document.getElementById('input-leito').value = '';
+  document.getElementById('input-nome').value = '';
+  if (sexoEl) { sexoEl.checked = false; toggleSexoUI(); }
+  salvarLS();
+  renderPacientes();
+}
+
+function renderPacientes() {
+  const lista = document.getElementById('lista-pacientes');
+  const vazio = document.getElementById('sem-pacientes');
+  const ids = Object.keys(pacientes);
+  vazio.style.display = ids.length ? 'none' : 'block';
+  lista.innerHTML = '';
+  ids.forEach(id => {
+    const p = pacientes[id];
+    lista.appendChild(buildPatientCard(p));
+  });
+}
+
+function buildPatientCard(p) {
+  const div = document.createElement('div');
+  div.className = 'patient-card';
+  div.id = 'card-' + p.id;
+
+  const badgeClass = p.admissaoFeita ? 'badge done' : 'badge';
+  const badgeText = p.admissaoFeita ? '✓ Admissão' : 'Pendente';
+  const tabsDisabled = !p.admissaoFeita ? 'disabled' : '';
+
+  div.innerHTML = `
+    <div class="patient-header" onclick="toggleCollapse('${p.id}', event)">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div>
+          <div class="bed">${p.leito}</div>
+          <div class="name">${p.nome}</div>
+        </div>
+        <span class="${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="btn-icon" title="Minimizar" onclick="toggleCollapse('${p.id}', event)" id="collapse-btn-${p.id}">−</button>
+        <div class="menu-wrap">
+          <button class="btn-icon" title="Mais opções" onclick="toggleMenu('${p.id}', event)">⋯</button>
+          <div class="menu-dropdown" id="menu-${p.id}">
+            <button class="menu-item" onclick="reabrirAdmissao('${p.id}');closeMenu('${p.id}')">✎ Refazer admissão</button>
+            <button class="menu-item danger" onclick="removerPaciente('${p.id}')">✕ Remover paciente</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="patient-card-body">
+      <div class="patient-tabs">
+        <button class="patient-tab ${!p.admissaoFeita ? 'active' : ''}" onclick="showTab('${p.id}','adm')">Admissão</button>
+        <button class="patient-tab" ${tabsDisabled} onclick="showTab('${p.id}','meds')">Medicações</button>
+        <button class="patient-tab" ${tabsDisabled} onclick="showTab('${p.id}','notes')">Anotações</button>
+      </div>
+      <div id="tab-adm-${p.id}" class="tab-content ${!p.admissaoFeita ? 'active' : ''}">
+        ${buildAdmTab(p)}
+      </div>
+      <div id="tab-meds-${p.id}" class="tab-content ${p.admissaoFeita ? 'active' : ''}">
+        ${buildMedsTab(p)}
+      </div>
+      <div id="tab-notes-${p.id}" class="tab-content">
+        ${buildNotesTab(p)}
+      </div>
+    </div>
+  `;
+  return div;
+}
+
+function buildAdmTab(p) {
+  if (p.admissaoFeita) {
+    return `
+      <div class="result-box" style="font-size:13px;max-height:200px;overflow-y:auto;">${p.admissaoTexto}</div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="copiarTexto(\`${escapeBacktick(p.admissaoTexto)}\`)">📋 Copiar</button>
+      </div>`;
+  }
+  return `<p style="color:var(--text-soft);font-size:14px;margin-bottom:14px;">A admissão ainda não foi realizada.</p>
+    <button class="btn btn-green" onclick="iniciarAdmissao('${p.id}')">▶ Iniciar admissão</button>`;
+}
+
+function buildMedsTab(p) {
+  let medListHtml = '';
+  if (p.meds.length === 0) {
+    medListHtml = '<div class="empty-state">Nenhuma medicação registrada.</div>';
+  } else {
+    medListHtml = '<div class="med-list">' + p.meds.map((m, i) => {
+      const escapedResumo = (m.adminResumo || '').replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+      const adminSummaryHtml = m.admin && m.adminResumo
+        ? `<div class="med-admin-resumo"><span class="med-admin-resumo-icon">✓</span><span style="flex:1">${(m.adminResumo||'').replace(/</g,'&lt;')}</span><button class="btn-copy-resumo" title="Copiar" onclick="copiarTexto(\`${escapedResumo}\`)">📋</button></div>`
+        : '';
+      const vigilHtml = m.altaVigilancia ? `<div class="med-detail med-alta-vig">⚠️ Alta vigilância</div>` : '';
+      // Verificar se o nome existe no banco (ou se já tem uma ref selecionada)
+      const dbMatch = m.dbRef ? medNoBanco(m.dbRef) : medNoBanco(m.nome);
+      const nomeNoDb = !!dbMatch;
+      const nomeHtml = nomeNoDb
+        ? `<div class="med-name">${(m.nome||'').replace(/</g,'&lt;')}</div>`
+        : `<div class="med-name"><span class="med-nome-unknown" title="Medicação não encontrada no banco — clique para sugestões" onclick="abrirSugPop(this,'${(m.nome||'').replace(/'/g,"\\'")}','${p.id}',${i})">${(m.nome||'').replace(/</g,'&lt;')}</span></div>`;
+      const infoPanelHtml = (m.dbRef || nomeNoDb) ? buildMedInfoPanel(m.dbRef || m.nome) : '';
+      return `<div class="med-item-wrap"><div class="med-item"><div>${nomeHtml}<div class="med-detail">${(m.dose||'').replace(/</g,'&lt;')} · ${(m.via||'').replace(/</g,'&lt;')} · ${(m.freq||'').replace(/</g,'&lt;')}</div>${m.obs ? `<div class="med-detail" style="font-style:italic">${(m.obs||'').replace(/</g,'&lt;')}</div>` : ''}${vigilHtml}</div><div style="display:flex;align-items:center;gap:8px;"><span class="med-time">${(m.horario||'').replace(/</g,'&lt;')}</span><button class="med-status ${m.admin ? 'admin' : ''}" title="${m.admin ? 'Desfazer administração' : 'Registrar administração'}" onclick="toggleMedAdmin('${p.id}',${i})"></button><button class="btn btn-danger btn-sm" onclick="removerMed('${p.id}',${i})">✕</button></div></div>${infoPanelHtml}${adminSummaryHtml}</div>`;
+    }).join('') + '</div>';
+  }
+  return `${medListHtml}
+    <hr class="divider">
+    <div class="med-add-form">
+      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:4px;">✚ Adicionar medicação</div>
+      <div class="input-row">
+        <input class="text-input" id="med-nome-${p.id}" placeholder="Medicamento">
+        <input class="text-input" id="med-dose-${p.id}" placeholder="Dose" style="max-width:110px">
+      </div>
+      <div class="input-row">
+        <input class="text-input" id="med-via-${p.id}" placeholder="Via (IV, VO…)" style="max-width:120px">
+        <input class="text-input" id="med-freq-${p.id}" placeholder="Frequência" style="max-width:140px">
+        <input class="text-input" id="med-horario-${p.id}" placeholder="Horário" style="max-width:100px">
+      </div>
+      <div class="input-row" style="align-items:center">
+        <input class="text-input" id="med-obs-${p.id}" placeholder="Observações (opcional)">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;padding:0 4px;"><input type="checkbox" id="med-altavig-${p.id}"> Alta vigilância</label>
+      </div>
+      <div><button class="btn btn-green btn-sm" onclick="adicionarMed('${p.id}')">✚ Adicionar</button></div>
+    </div>`;
+}
+
+function buildNotesTab(p) {
+  let noteHtml = '';
+  if (p.notes.length === 0) {
+    noteHtml = '<div class="empty-state">Nenhuma anotação registrada.</div>';
+  } else {
+    noteHtml = '<div class="note-list">' + p.notes.map((n, i) => `
+      <div class="note-item">
+        <div class="note-time">${n.time}</div>
+        <div class="note-text">${n.text}</div>
+        <div style="margin-top:6px;"><button class="btn btn-danger btn-sm" onclick="removerNote('${p.id}',${i})">✕ Remover</button></div>
+      </div>`).join('') + '</div>';
+  }
+  return `${noteHtml}
+    <hr class="divider">
+    <div class="note-add-form">
+      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:4px;">✚ Nova anotação</div>
+      <textarea class="text-input" id="note-text-${p.id}" placeholder="Registre aqui a observação…"></textarea>
+      <div><button class="btn btn-sm" onclick="adicionarNote('${p.id}')">✚ Registrar</button></div>
+    </div>`;
+}
+
+function showTab(id, tab) {
+  const p = pacientes[id];
+  const tabs = ['adm', 'meds', 'notes'];
+  tabs.forEach(t => {
+    const el = document.getElementById(`tab-${t}-${id}`);
+    if (el) el.classList.remove('active');
+  });
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    const btns = card.querySelectorAll('.patient-tab');
+    btns.forEach((b, i) => { b.classList.remove('active'); if (i === tabs.indexOf(tab)) b.classList.add('active'); });
+  }
+  const target = document.getElementById(`tab-${tab}-${id}`);
+  if (target) target.classList.add('active');
+}
+
+function removerPaciente(id) {
+  if (!confirm('Remover este paciente?')) return;
+  delete pacientes[id];
+  salvarLS();
+  renderPacientes();
+}
+
+// ════════════════════════════════════════════
+// MEDS & NOTES
+// ════════════════════════════════════════════
+function adicionarMed(id) {
+  const nome = document.getElementById('med-nome-' + id).value.trim();
+  if (!nome) { alert('Informe o nome do medicamento.'); return; }
+  const altaVigEl = document.getElementById('med-altavig-' + id);
+  pacientes[id].meds.push({
+    nome,
+    dose: document.getElementById('med-dose-' + id).value.trim() || '-',
+    via: document.getElementById('med-via-' + id).value.trim() || '-',
+    freq: document.getElementById('med-freq-' + id).value.trim() || '-',
+    horario: document.getElementById('med-horario-' + id).value.trim() || '--:--',
+    obs: document.getElementById('med-obs-' + id).value.trim(),
+    altaVigilancia: altaVigEl ? altaVigEl.checked : false,
+    admin: false,
+    adminResumo: ''
+  });
+  salvarLS();
+  renderPacientes(); showTab(id, 'meds');
+}
+
+function removerMed(id, idx) {
+  pacientes[id].meds.splice(idx, 1);
+  salvarLS();
+  renderPacientes(); showTab(id, 'meds');
+}
+
+function toggleMedAdmin(patId, idx) {
+  const m = pacientes[patId].meds[idx];
+  if (m.admin) {
+    // desfazer
+    m.admin = false;
+    m.adminResumo = '';
+    renderPacientes(); showTab(patId, 'meds');
+    return;
+  }
+  // abrir modal para preencher dados da administração
+  abrirModalAdmin(patId, idx);
+}
+
+function abrirModalAdmin(patId, idx) {
+  const m = pacientes[patId].meds[idx];
+  // remove modal anterior se existir
+  document.getElementById('modal-admin-overlay')?.remove();
+
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const horaAtual = `${hh}:${mm}`;
+
+  // numeração do item na prescrição (índice + 1)
+  const numItem = idx + 1;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-admin-overlay';
+  overlay.innerHTML = `
+    <div id="modal-admin-box">
+      <div id="modal-admin-title">💉 Registrar Administração</div>
+      <div id="modal-admin-med-name">${(m.nome||'').replace(/</g,'&lt;')} · ${(m.dose||'').replace(/</g,'&lt;')} · ${(m.via||'').replace(/</g,'&lt;')}</div>
+
+      <div class="modal-field">
+        <label class="modal-label">Horário da administração</label>
+        <input class="text-input" id="madm-hora" type="time" value="${horaAtual}">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Via de administração</label>
+        <input class="text-input" id="madm-via" placeholder="Ex: IV, VO, SC, IM…" value="${(m.via && m.via !== '-' ? m.via : '')}">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Local anatômico / Dispositivo</label>
+        <input class="text-input" id="madm-local" placeholder="Ex: AVP MSD, MBE, deltóide esquerdo…">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Queixas / Intercorrências durante administração</label>
+        <input class="text-input" id="madm-intercorr" placeholder="Ou deixe em branco para 'Sem intercorrências'">
+      </div>
+      ${m.altaVigilancia ? `
+      <div class="modal-field">
+        <label class="modal-label">⚠️ Dupla checagem — nome do profissional</label>
+        <input class="text-input" id="madm-dupla" placeholder="Nome e função">
+      </div>` : ''}
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button class="btn btn-green" onclick="confirmarAdmin('${patId}',${idx})">✓ Confirmar</button>
+        <button class="btn btn-outline" onclick="document.getElementById('modal-admin-overlay').remove()">Cancelar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('madm-hora').focus();
+}
+
+function confirmarAdmin(patId, idx) {
+  const m = pacientes[patId].meds[idx];
+  const hora = document.getElementById('madm-hora')?.value || m.horario;
+  const via  = document.getElementById('madm-via')?.value.trim() || m.via;
+  const local = document.getElementById('madm-local')?.value.trim() || 'local não informado';
+  const intercorrInput = document.getElementById('madm-intercorr')?.value.trim();
+  const intercorr = intercorrInput || 'Sem intercorrências durante a administração.';
+  const dupla = m.altaVigilancia ? (document.getElementById('madm-dupla')?.value.trim() || '') : '';
+
+  let resumo = `${hora} – Administrado ${m.nome}, via ${via}, em ${local}, conforme prescrição médica (CPM). ${intercorr}`;
+  if (m.altaVigilancia && dupla) resumo += ` Dupla checagem realizada com ${dupla}.`;
+  else if (m.altaVigilancia) resumo += ` Medicação de alta vigilância — dupla checagem não informada.`;
+
+  m.admin = true;
+  m.adminResumo = resumo;
+  salvarLS();
+  document.getElementById('modal-admin-overlay')?.remove();
+  renderPacientes(); showTab(patId, 'meds');
+}
+
+function adicionarNote(id) {
+  const text = document.getElementById('note-text-' + id).value.trim();
+  if (!text) return;
+  const now = new Date();
+  const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ' — ' +
+               now.toLocaleDateString('pt-BR');
+  pacientes[id].notes.push({ time, text });
+  salvarLS();
+  renderPacientes(); showTab(id, 'notes');
+}
+
+function removerNote(id, idx) {
+  pacientes[id].notes.splice(idx, 1);
+  salvarLS();
+  renderPacientes(); showTab(id, 'notes');
+}
+
+// ════════════════════════════════════════════
+// ADMISSION FLOW
+// ════════════════════════════════════════════
+function iniciarAdmissao(id) {
+  currentPatientId = id;
+  admCurrentStep = 1;
+  admAnswers = {};
+  showScreen('admission');
+  renderAdmStep();
+}
+
+function reabrirAdmissao(id) {
+  pacientes[id].admissaoFeita = false;
+  pacientes[id].admissaoTexto = '';
+  salvarLS();
+  iniciarAdmissao(id);
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function voltarParaHome() {
+  showScreen('home');
+  renderPacientes();
+}
+
+function admStep(dir) {
+  if (dir === 1 && admCurrentStep < TOTAL_STEPS) {
+    coletarRespostas(admCurrentStep);
+    admCurrentStep++;
+    renderAdmStep();
+  } else if (dir === 1 && admCurrentStep === TOTAL_STEPS) {
+    coletarRespostas(admCurrentStep);
+    gerarResumo();
+  } else if (dir === -1 && admCurrentStep > 1) {
+    admCurrentStep--;
+    renderAdmStep();
+  }
+}
+
+function renderAdmStep() {
+  const p = pacientes[currentPatientId];
+  document.getElementById('adm-patient-title').textContent = `${p.leito} — ${p.nome}`;
+  const pct = Math.round(((admCurrentStep - 1) / TOTAL_STEPS) * 100);
+  document.getElementById('adm-progress-bar').style.width = pct + '%';
+  document.getElementById('adm-progress-label').textContent = `Etapa ${admCurrentStep} de ${TOTAL_STEPS}`;
+  document.getElementById('adm-btn-back').style.visibility = admCurrentStep > 1 ? 'visible' : 'hidden';
+  document.getElementById('adm-btn-next').textContent = admCurrentStep === TOTAL_STEPS ? 'Finalizar →' : 'Próximo →';
+  document.getElementById('adm-step-content').innerHTML = buildStep(admCurrentStep);
+  restaurarRespostas(admCurrentStep);
+  bindConditionals();
+}
+
+function buildStep(n) {
+  if (n === 1) return buildStep1();
+  if (n === 2) return buildStep2();
+  if (n === 3) return buildStep3();
+  if (n === 4) return buildStep4();
+  if (n === 5) return buildStep5();
+  return '';
+}
+
+// ─────────────────────────────────────
+// STEP 1 — Identificação e Segurança
+// ─────────────────────────────────────
+function buildStep1() {
+  return `<div class="step-body">
+  <div class="step-title"><span>🔐</span> Identificação e Segurança</div>
+
+  <div class="q-group">
+    <h3>Como encontrou o paciente?</h3>
+    <div class="q-item">
+      <div class="pill-group">
+        ${radio('enc','Acordado no leito')}${radio('enc','Dormindo no leito')}
+        ${radio('enc','Acordado na poltrona')}${radio('enc','Dormindo na poltrona')}
+      </div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Pulseira de Identificação</h3>
+    <div class="q-item"><label class="q-label">Pulseira presente?</label>
+      <div class="pill-group">${radioColor('puls_presente','Sim','green')}${radioColor('puls_presente','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Pulseira legível?</label>
+      <div class="pill-group">${radioColor('puls_legivel','Sim','green')}${radioColor('puls_legivel','Não','red')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Pulseira de Risco de Queda</h3>
+    <div class="q-item"><div class="pill-group">${radioColor('puls_queda','Sim','green')}${radioColor('puls_queda','Não','red')}${radio('puls_queda','Não se aplica')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Pulseira de Alergia</h3>
+    <div class="q-item"><div class="pill-group">${radioColor('puls_alergia','Sim','green')}${radioColor('puls_alergia','Não','red')}${radio('puls_alergia','Não se aplica')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Segurança do Leito</h3>
+    <div class="q-item"><label class="q-label">Cama em posição baixa?</label>
+      <div class="pill-group">${radioColor('cama_baixa','Sim','green')}${radioColor('cama_baixa','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Grades laterais elevadas?</label>
+      <div class="pill-group">${radioColor('grades','Sim','green')}${radioColor('grades','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Rodas travadas?</label>
+      <div class="pill-group">${radioColor('rodas','Sim','green')}${radioColor('rodas','Não','red')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Campainha</h3>
+    <div class="q-item"><label class="q-label">Campainha localizada?</label>
+      <div class="pill-group">${radioColor('camp_local','Sim','green')}${radioColor('camp_local','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Campainha testada?</label>
+      <div class="pill-group">${radioColor('camp_testada','Sim','green')}${radioColor('camp_testada','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Paciente orientado sobre utilização da campainha?</label>
+      <div class="pill-group">${radioColor('camp_ori','Sim','green')}${radioColor('camp_ori','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Paciente orientado a não levantar sozinho?</label>
+      <div class="pill-group">${radioColor('nao_levantar','Sim','green')}${radioColor('nao_levantar','Não','red')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Acompanhante</h3>
+    <div class="q-item"><label class="q-label">Possui acompanhante?</label>
+      <div class="pill-group">${radio('acomp','Sim','cond-acomp')}${radio('acomp','Não','cond-acomp')}</div></div>
+    <div class="cond-block" id="cond-acomp">
+      <div class="q-item"><label class="q-label">Quem é o acompanhante?</label>
+        <select class="text-input" id="acomp_tipo" style="max-width:220px">
+          <option value="">— Não informado —</option>
+          <option value="pai">Pai</option>
+          <option value="mãe">Mãe</option>
+          <option value="filho">Filho</option>
+          <option value="filha">Filha</option>
+          <option value="irmão">Irmão</option>
+          <option value="irmã">Irmã</option>
+          <option value="esposo">Esposo</option>
+          <option value="esposa">Esposa</option>
+          <option value="avô">Avô</option>
+          <option value="avó">Avó</option>
+          <option value="neto">Neto</option>
+          <option value="neta">Neta</option>
+          <option value="tio">Tio</option>
+          <option value="tia">Tia</option>
+          <option value="primo">Primo</option>
+          <option value="prima">Prima</option>
+          <option value="cuidador">Cuidador</option>
+          <option value="cuidadora">Cuidadora</option>
+          <option value="responsável legal">Responsável legal</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="q-item"><label class="q-label">Acompanhante orientado sobre utilização da campainha?</label>
+        <div class="pill-group">${radioColor('acomp_camp','Sim','green')}${radioColor('acomp_camp','Não','red')}</div></div>
+      <div class="q-item"><label class="q-label">Acompanhante orientado a solicitar auxílio antes de retirar o paciente do leito?</label>
+        <div class="pill-group">${radioColor('acomp_aux','Sim','green')}${radioColor('acomp_aux','Não','red')}</div></div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Protocolo de Queda</h3>
+    <div class="q-item"><label class="q-label">Protocolo de prevenção de queda orientado?</label>
+      <div class="pill-group">${radioColor('prot_queda','Sim','green')}${radioColor('prot_queda','Não','red')}</div></div>
+    <div class="q-item"><label class="q-label">Paciente compreendeu as orientações?</label>
+      <div class="pill-group">${radioColor('compreendeu','Sim','green')}${radioColor('compreendeu','Não','red')}${radio('compreendeu','Não foi possível avaliar')}</div></div>
+  </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+// STEP 2 — Estado Geral
+// ─────────────────────────────────────
+function buildStep2() {
+  return `<div class="step-body">
+  <div class="step-title"><span>❤️</span> Estado Geral e Sinais Vitais</div>
+
+  <div class="q-group">
+    <h3>Nível de Consciência</h3>
+    <div class="q-item"><div class="pill-group">
+      ${radio('nc','Consciente, comunicando-se com coerência')}
+      ${radio('nc','Consciente, porém confuso')}
+      ${radio('nc','Sonolento, respondendo a estímulos verbais')}
+      ${radio('nc','Apresentando agitação psicomotora')}
+      ${radio('nc','Não responsivo a estímulos verbais')}
+    </div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Sinais Vitais</h3>
+    <div class="q-item"><label class="q-label">PA (mmHg)</label>
+      <input class="text-input" id="sv_pa" placeholder="Ex: 120x80" style="max-width:200px"></div>
+    <div class="q-item"><label class="q-label">FC (bpm)</label>
+      <input class="text-input" id="sv_fc" placeholder="Ex: 80" style="max-width:120px"></div>
+    <div class="q-item"><label class="q-label">FR (irpm)</label>
+      <input class="text-input" id="sv_fr" placeholder="Ex: 18" style="max-width:120px"></div>
+    <div class="q-item"><label class="q-label">Temperatura (°C)</label>
+      <input class="text-input" id="sv_temp" placeholder="Ex: 36.5" style="max-width:120px"></div>
+    <div class="q-item"><label class="q-label">Saturação (%)</label>
+      <input class="text-input" id="sv_sat" placeholder="Ex: 98" style="max-width:120px"></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Dor</h3>
+    <div class="q-item"><label class="q-label">Dor presente?</label>
+      <div class="pill-group">${radio('dor','Sim','cond-dor')}${radio('dor','Não','cond-dor')}</div></div>
+    <div class="cond-block" id="cond-dor">
+      <div class="q-item"><label class="q-label">Local da dor</label>
+        <input class="text-input" id="dor_local" placeholder="Localização"></div>
+      <div class="q-item"><label class="q-label">Intensidade (0–10)</label>
+        <input class="text-input" id="dor_escala" placeholder="0 a 10" type="number" min="0" max="10" style="max-width:100px"></div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>HGT</h3>
+    <div class="q-item"><label class="q-label">HGT realizado?</label>
+      <div class="pill-group">${radio('hgt','Sim','cond-hgt')}${radio('hgt','Não','cond-hgt')}</div></div>
+    <div class="cond-block" id="cond-hgt">
+      <div class="q-item"><label class="q-label">Valor (mg/dL)</label>
+        <input class="text-input" id="hgt_valor" placeholder="Valor" style="max-width:120px"></div>
+    </div>
+  </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+// STEP 3 — Dispositivos
+// ─────────────────────────────────────
+function buildStep3() {
+  return `<div class="step-body">
+  <div class="step-title"><span>🩺</span> Dispositivos</div>
+
+  <div class="q-group">
+    <h3>Acesso Venoso</h3>
+    <div class="q-item"><label class="q-label">Possui acesso venoso?</label>
+      <div class="pill-group">${radio('av','Sim','cond-av')}${radio('av','Não','cond-av')}</div></div>
+    <div class="cond-block" id="cond-av">
+      <div class="q-item"><label class="q-label">Tipo</label>
+        <div class="pill-group">${radio('av_tipo','AVP')}${radio('av_tipo','CVC')}${radio('av_tipo','PICC')}</div></div>
+      <div class="input-row" style="margin-bottom:10px">
+        <div><label class="q-label">Local</label><input class="text-input" id="av_local" placeholder="MSD, MSE…"></div>
+        <div><label class="q-label">Calibre</label><input class="text-input" id="av_calibre" placeholder="Ex: 20G"></div>
+      </div>
+      <div class="input-row" style="margin-bottom:10px">
+        <div><label class="q-label">Data da punção</label><input class="text-input" id="av_data_puncao" type="date"></div>
+        <div><label class="q-label">Data do curativo</label><input class="text-input" id="av_data_curativo" type="date"></div>
+        <div><label class="q-label">Data troca equipo</label><input class="text-input" id="av_data_equipo" type="date"></div>
+      </div>
+      <div class="q-item"><label class="q-label">Pérvio?</label>
+        <div class="pill-group">${radioColor('av_pervio','Sim','green')}${radioColor('av_pervio','Não','red')}</div></div>
+
+      <div class="q-item"><label class="q-label">Status atual</label>
+        <div class="pill-group">
+          ${radio('av_status','Salinizado','cond-av-status')}
+          ${radio('av_status','Em Soroterapia','cond-av-status')}
+        </div>
+      </div>
+      <div class="cond-block" id="cond-av-status">
+        <div id="av-status-soro-fields">
+          <div class="q-item"><label class="q-label">Solução infundindo</label>
+            <input class="text-input" id="av_solucao" placeholder="Ex: SF 0,9%, SG 5%, Ringer lactato…"></div>
+          <div class="input-row" style="margin-top:8px">
+            <div><label class="q-label">Volume (mL)</label>
+              <input class="text-input" id="av_volume" placeholder="Ex: 500" style="max-width:110px"></div>
+            <div><label class="q-label">Velocidade de infusão</label>
+              <div class="pill-group" style="margin-top:6px">
+                ${radio('av_vel_tipo','Gotejamento (gtts/min)')}
+                ${radio('av_vel_tipo','BIC (mL/h)')}
+              </div>
+            </div>
+          </div>
+          <div class="input-row" style="margin-top:8px">
+            <div><label class="q-label">Valor</label>
+              <input class="text-input" id="av_vel_valor" placeholder="Ex: 30" style="max-width:100px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="q-item"><label class="q-label">Sinais flogísticos (dor / calor / rubor)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:6px;">
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Dor</div>
+            <div class="pill-group">${radioColor('av_dor','Sim','red')}${radioColor('av_dor','Não','green')}</div></div>
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Calor</div>
+            <div class="pill-group">${radioColor('av_calor','Sim','red')}${radioColor('av_calor','Não','green')}</div></div>
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Rubor</div>
+            <div class="pill-group">${radioColor('av_rubor','Sim','red')}${radioColor('av_rubor','Não','green')}</div></div>
+        </div>
+      </div>
+      <div class="q-item"><label class="q-label">Curativo</label>
+        <div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:6px;">
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Limpo</div>
+            <div class="pill-group">${radioColor('curativo_limpo','Sim','green')}${radioColor('curativo_limpo','Não','red')}</div></div>
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Seco</div>
+            <div class="pill-group">${radioColor('curativo_seco','Sim','green')}${radioColor('curativo_seco','Não','red')}</div></div>
+          <div><div style="font-size:12px;color:var(--text-soft);margin-bottom:4px">Íntegro</div>
+            <div class="pill-group">${radioColor('curativo_integro','Sim','green')}${radioColor('curativo_integro','Não','red')}</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Oxigenoterapia</h3>
+    <div class="q-item"><label class="q-label">Em uso?</label>
+      <div class="pill-group">${radio('o2','Sim','cond-o2')}${radio('o2','Não','cond-o2')}</div></div>
+    <div class="cond-block" id="cond-o2">
+      <div class="q-item"><label class="q-label">Dispositivo</label>
+        <div class="pill-group">
+          ${radio('o2_disp','Cateter nasal')}${radio('o2_disp','Máscara simples')}
+          ${radio('o2_disp','Venturi')}${radio('o2_disp','Reservatório')}
+        </div></div>
+      <div class="q-item"><label class="q-label">Fluxo (L/min)</label>
+        <input class="text-input" id="o2_fluxo" placeholder="Ex: 2" style="max-width:100px"></div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Sondas</h3>
+    <div class="q-item"><label class="q-label">Possui sonda?</label>
+      <div class="pill-group">${radio('sonda','Sim','cond-sonda')}${radio('sonda','Não','cond-sonda')}</div></div>
+    <div class="cond-block" id="cond-sonda">
+      <div class="q-item"><label class="q-label">Tipo</label>
+        <div class="pill-group" id="sonda-tipo-pills">${radio('sonda_tipo','SVD','cond-sonda-loc')}${radio('sonda_tipo','SNE','cond-sonda-loc')}${radio('sonda_tipo','SNG','cond-sonda-loc')}${radio('sonda_tipo','SOG','cond-sonda-loc')}</div></div>
+      <div class="cond-block visible" id="cond-sonda-loc">
+        <div id="sonda-narina-row" style="display:none">
+          <div class="q-item"><label class="q-label">Narina</label>
+            <div class="pill-group">${radio('sonda_narina','ND (narina direita)')}${radio('sonda_narina','NE (narina esquerda)')}</div></div>
+        </div>
+        <div id="sonda-oral-row" style="display:none">
+          <div class="q-item"><label class="q-label">Via</label>
+            <div class="pill-group"><input type="radio" name="sonda_oral" id="r_sonda_oral_CO" value="CO (cavidade oral)" checked><label for="r_sonda_oral_CO">CO (cavidade oral)</label></div></div>
+        </div>
+      </div>
+      <div class="q-item"><label class="q-label">Data da passagem</label>
+        <input class="text-input" id="sonda_data" type="date" style="max-width:180px"></div>
+      <div class="q-item"><label class="q-label">Fixação adequada?</label>
+        <div class="pill-group">${radioColor('sonda_fix','Sim','green')}${radioColor('sonda_fix','Não','red')}</div></div>
+      <div class="q-item"><label class="q-label">Sem tração?</label>
+        <div class="pill-group">${radioColor('sonda_tracao','Sim','green')}${radioColor('sonda_tracao','Não','red')}</div></div>
+      <div class="input-row">
+        <div><label class="q-label">Débito</label><input class="text-input" id="sonda_debito" placeholder="mL"></div>
+        <div><label class="q-label">Aspecto</label><input class="text-input" id="sonda_aspecto" placeholder="Aspecto"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Drenos</h3>
+    <div class="q-item"><label class="q-label">Possui dreno?</label>
+      <div class="pill-group">${radio('dreno','Sim','cond-dreno')}${radio('dreno','Não','cond-dreno')}</div></div>
+    <div class="cond-block" id="cond-dreno">
+      <div class="input-row">
+        <div><label class="q-label">Tipo</label><input class="text-input" id="dreno_tipo" placeholder="Tipo de dreno"></div>
+        <div><label class="q-label">Local</label><input class="text-input" id="dreno_local" placeholder="Localização"></div>
+      </div>
+      <div class="input-row" style="margin-top:10px">
+        <div><label class="q-label">Volume</label><input class="text-input" id="dreno_vol" placeholder="mL"></div>
+        <div><label class="q-label">Aspecto da secreção</label><input class="text-input" id="dreno_aspecto" placeholder="Aspecto"></div>
+      </div>
+    </div>
+  </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+// STEP 4 — Pele e Eliminações
+// ─────────────────────────────────────
+function buildStep4() {
+  return `<div class="step-body">
+  <div class="step-title"><span>🩹</span> Pele, Dieta e Eliminações</div>
+
+  <div class="q-group">
+    <h3>Integridade da Pele</h3>
+    <div class="q-item"><label class="q-label">Integridade</label>
+      <div class="pill-group">${radioColor('pele_int','Íntegra','green')}${radioColor('pele_int','Alterada','red')}</div></div>
+    <div class="q-item"><label class="q-label">Edema?</label>
+      <div class="pill-group">${radio('edema','Sim','cond-edema')}${radio('edema','Não','cond-edema')}</div></div>
+    <div class="cond-block" id="cond-edema">
+      <div class="q-item"><label class="q-label">Local / Grau</label>
+        <input class="text-input" id="edema_desc" placeholder="Ex: MMII +2/+4"></div>
+    </div>
+    <div class="q-item"><label class="q-label">Hiperemia?</label>
+      <div class="pill-group">${radio('hiper','Sim','cond-hiper')}${radio('hiper','Não','cond-hiper')}</div></div>
+    <div class="cond-block" id="cond-hiper">
+      <div class="q-item"><label class="q-label">Local</label>
+        <input class="text-input" id="hiper_local" placeholder="Localização"></div>
+    </div>
+    <div class="q-item"><label class="q-label">LPP (Lesão por Pressão)?</label>
+      <div class="pill-group">${radio('lpp','Sim','cond-lpp')}${radio('lpp','Não','cond-lpp')}</div></div>
+    <div class="cond-block" id="cond-lpp">
+      <div class="input-row">
+        <div><label class="q-label">Local</label><input class="text-input" id="lpp_local" placeholder="Localização"></div>
+        <div><label class="q-label">Estágio</label><input class="text-input" id="lpp_estagio" placeholder="1,2,3,4…"></div>
+      </div>
+      <div class="input-row" style="margin-top:10px">
+        <div><label class="q-label">Cobertura</label><input class="text-input" id="lpp_cobertura" placeholder="Cobertura utilizada"></div>
+        <div><label class="q-label">Exsudato</label><input class="text-input" id="lpp_exsudato" placeholder="Aspecto e quantidade"></div>
+      </div>
+    </div>
+    <div class="q-item"><label class="q-label">Outras lesões?</label>
+      <div class="pill-group">${radio('outras_lesoes','Sim','cond-outras-lesoes')}${radio('outras_lesoes','Não','cond-outras-lesoes')}</div></div>
+    <div class="cond-block" id="cond-outras-lesoes">
+      <div class="q-item"><label class="q-label">Descrição</label>
+        <textarea class="text-input" id="outras_lesoes_desc" placeholder="Descreva as lesões"></textarea></div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Dieta</h3>
+    <div class="q-item"><label class="q-label">Tipo</label>
+      <div class="pill-group">
+        ${radio('dieta_tipo','Livre')}${radio('dieta_tipo','Branda')}${radio('dieta_tipo','Pastosa')}
+        ${radio('dieta_tipo','Enteral')}${radio('dieta_tipo','Jejum')}
+      </div></div>
+    <div class="q-item"><label class="q-label">Aceitação</label>
+      <div class="pill-group">${radioColor('dieta_aceit','Boa','green')}${radioColor('dieta_aceit','Regular','')}${radioColor('dieta_aceit','Ruim','red')}</div></div>
+  </div>
+
+  <div class="q-group">
+    <h3>Diurese</h3>
+    <div class="q-item"><label class="q-label">Origem da informação</label>
+      <div class="pill-group">
+        ${radio('diurese_origem','Observada por mim')}${radio('diurese_origem','Relatada pelo paciente')}
+        ${radio('diurese_origem','Relatada pelo acompanhante')}${radio('diurese_origem','Não houve','cond-diurese-nao')}
+      </div></div>
+    <div class="cond-block" id="cond-diurese-nao" style="display:none"></div>
+    <div id="cond-diurese-dados">
+      <div class="input-row" style="margin-top:10px">
+        <div><label class="q-label">Quantidade</label><input class="text-input" id="diurese_qtd" placeholder="mL ou estimativa"></div>
+        <div><label class="q-label">Aspecto</label><input class="text-input" id="diurese_aspecto" placeholder="Cor, odor…"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="q-group">
+    <h3>Evacuação</h3>
+    <div class="q-item"><label class="q-label">Origem da informação</label>
+      <div class="pill-group">
+        ${radio('evac_origem','Observada por mim')}${radio('evac_origem','Relatada pelo paciente')}
+        ${radio('evac_origem','Relatada pelo acompanhante')}${radio('evac_origem','Não houve')}
+      </div></div>
+    <div class="q-item"><label class="q-label">Consistência</label>
+      <div class="pill-group">${radio('evac_consist','Formada')}${radio('evac_consist','Pastosa')}${radio('evac_consist','Líquida')}</div></div>
+    <div class="q-item"><label class="q-label">Quantidade / Observações</label>
+      <input class="text-input" id="evac_qtd" placeholder="Quantidade e aspecto"></div>
+  </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+// STEP 5 — Intercorrências
+// ─────────────────────────────────────
+function buildStep5() {
+  const tipos = ['Queda','Hipertensão','Hipotensão','Náusea','Vômito','Dor',
+                 'Hipoglicemia','Hiperglicemia','Recusa de medicação','Recusa alimentar','Outra'];
+  const checkboxes = tipos.map(t => checkboxInput('intercorr_tipo', t)).join('');
+  return `<div class="step-body">
+  <div class="step-title"><span>⚠️</span> Intercorrências</div>
+
+  <div class="q-group">
+    <div class="q-item"><label class="q-label">Houve intercorrências?</label>
+      <div class="pill-group">${radio('intercorr','Sim','cond-intercorr')}${radio('intercorr','Não','cond-intercorr')}</div></div>
+    <div class="cond-block" id="cond-intercorr">
+      <div class="q-item"><label class="q-label">Tipo(s)</label>
+        <div class="pill-group" style="margin-bottom:12px">${checkboxes}</div></div>
+      <div class="q-item"><label class="q-label">Descrição</label>
+        <textarea class="text-input" id="intercorr_desc" placeholder="Descreva a(s) intercorrência(s), condutas e desfecho…" rows="4"></textarea></div>
+    </div>
+  </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────
+function radio(name, value, condId) {
+  const uid = 'r_' + name + '_' + value.replace(/\s+/g,'_');
+  const condAttr = condId ? `data-cond="${condId}"` : '';
+  return `<input type="radio" name="${name}" id="${uid}" value="${value}" ${condAttr}><label for="${uid}">${value}</label>`;
+}
+
+function radioColor(name, value, color) {
+  const uid = 'r_' + name + '_' + value.replace(/\s+/g,'_');
+  const cls = color ? `pill-${color}` : '';
+  return `<input type="radio" name="${name}" id="${uid}" value="${value}" class="${cls}"><label for="${uid}">${value}</label>`;
+}
+
+function checkboxInput(name, value) {
+  const uid = 'cb_' + name + '_' + value.replace(/\s+/g,'_');
+  return `<input type="checkbox" name="${name}" id="${uid}" value="${value}"><label for="${uid}">${value}</label>`;
+}
+
+function bindConditionals() {
+  const container = document.getElementById('adm-step-content');
+  if (!container) return;
+  const pairs = {
+    'acomp': 'cond-acomp', 'dor': 'cond-dor', 'hgt': 'cond-hgt',
+    'av': 'cond-av', 'av_status': 'cond-av-status', 'o2': 'cond-o2', 'sonda': 'cond-sonda',
+    'dreno': 'cond-dreno', 'edema': 'cond-edema', 'hiper': 'cond-hiper',
+    'lpp': 'cond-lpp', 'outras_lesoes': 'cond-outras-lesoes', 'intercorr': 'cond-intercorr',
+  };
+  Object.entries(pairs).forEach(([name, condId]) => {
+    container.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
+      inp.addEventListener('change', () => updateConditionals());
+    });
+  });
+  // sonda_tipo: show narina or oral row
+  container.querySelectorAll('input[name="sonda_tipo"]').forEach(inp => {
+    inp.addEventListener('change', () => updateSondaLoc());
+  });
+  updateConditionals();
+  updateSondaLoc();
+}
+
+function updateConditionals() {
+  const container = document.getElementById('adm-step-content');
+  if (!container) return;
+  const pairs = {
+    'acomp': 'cond-acomp', 'dor': 'cond-dor', 'hgt': 'cond-hgt',
+    'av': 'cond-av', 'av_status': 'cond-av-status', 'o2': 'cond-o2', 'sonda': 'cond-sonda',
+    'dreno': 'cond-dreno', 'edema': 'cond-edema', 'hiper': 'cond-hiper',
+    'lpp': 'cond-lpp', 'outras_lesoes': 'cond-outras-lesoes', 'intercorr': 'cond-intercorr',
+  };
+  Object.entries(pairs).forEach(([name, condId]) => {
+    const val = container.querySelector(`input[name="${name}"]:checked`)?.value;
+    const el = container.querySelector(`#${condId}`);
+    if (el) {
+      if (name === 'av_status') {
+        // show for both options (Salinizado and Em Soroterapia)
+        const soroFields = el.querySelector('#av-status-soro-fields');
+        el.classList.toggle('visible', !!val);
+        if (soroFields) soroFields.style.display = val === 'Em Soroterapia' ? 'block' : 'none';
+      } else {
+        el.classList.toggle('visible', val === 'Sim');
+      }
+    }
+  });
+}
+
+function updateSondaLoc() {
+  const container = document.getElementById('adm-step-content');
+  if (!container) return;
+  const tipo = container.querySelector('input[name="sonda_tipo"]:checked')?.value || '';
+  const narinaRow = container.querySelector('#sonda-narina-row');
+  const oralRow = container.querySelector('#sonda-oral-row');
+  if (narinaRow) narinaRow.style.display = (tipo === 'SNE' || tipo === 'SNG') ? 'block' : 'none';
+  if (oralRow) oralRow.style.display = tipo === 'SOG' ? 'block' : 'none';
+}
+
+// ─────────────────────────────────────
+// SAVE / RESTORE STATE
+// ─────────────────────────────────────
+function coletarRespostas(step) {
+  const container = document.getElementById('adm-step-content');
+  if (!container) return;
+
+  // radios
+  container.querySelectorAll('input[type="radio"]').forEach(inp => {
+    if (inp.checked) admAnswers[inp.name] = inp.value;
+  });
+
+  // checkboxes
+  const cbGroups = {};
+  container.querySelectorAll('input[type="checkbox"]').forEach(inp => {
+    if (!cbGroups[inp.name]) cbGroups[inp.name] = [];
+    if (inp.checked) cbGroups[inp.name].push(inp.value);
+  });
+  Object.assign(admAnswers, cbGroups);
+
+  // ALL text-like inputs, textareas, and selects
+  container.querySelectorAll('input, textarea, select').forEach(inp => {
+    if (inp.type === 'radio' || inp.type === 'checkbox') return;
+    if (inp.id) admAnswers[inp.id] = inp.value;
+  });
+}
+
+function restaurarRespostas(step) {
+  const container = document.getElementById('adm-step-content');
+  if (!container) return;
+  const a = admAnswers;
+  Object.entries(a).forEach(([key, val]) => {
+    if (Array.isArray(val)) {
+      val.forEach(v => {
+        const el = container.querySelector(`input[name="${key}"][value="${v}"]`);
+        if (el) el.checked = true;
+      });
+    } else {
+      const radio = container.querySelector(`input[type="radio"][name="${key}"][value="${val}"]`);
+      if (radio) { radio.checked = true; return; }
+      const inp = container.querySelector(`#${key}`);
+      if (inp) inp.value = val;
+    }
+  });
+  updateConditionals();
+  updateSondaLoc();
+}
+function gerarResumo() {
+  const allA = admAnswers;
+  const p = pacientes[currentPatientId];
+  const get = k => allA[k] || '';
+  const getArr = k => Array.isArray(allA[k]) ? allA[k] : (allA[k] ? [allA[k]] : []);
+
+  // Concordância de gênero do paciente
+  const fem = p.feminino === true;
+  const g = (masc, femin) => fem ? femin : masc;
+
+  let txt = '';
+
+  // Como encontrado — com concordância
+  const encVal = (get('enc') || 'sem informação').toLowerCase();
+  let encAdj = encVal
+    .replace('acordado no leito', g('acordado no leito','acordada no leito'))
+    .replace('dormindo no leito', 'dormindo no leito')
+    .replace('acordado na poltrona', g('acordado na poltrona','acordada na poltrona'))
+    .replace('dormindo na poltrona', 'dormindo na poltrona');
+  txt += `Paciente ${g('encontrado','encontrada')} ${encAdj}`;
+
+  // Consciência
+  if (get('nc')) txt += `, ${get('nc').toLowerCase()}`;
+  txt += '. ';
+
+  // Pulseiras
+  const pId = get('puls_presente') === 'Sim'
+    ? `Pulseira de identificação presente${get('puls_legivel') === 'Sim' ? ' e legível' : ', ilegível'}`
+    : 'Pulseira de identificação ausente';
+  txt += pId + '. ';
+
+  if (get('puls_queda') !== 'Não se aplica' && get('puls_queda')) {
+    txt += `Pulseira de risco de queda ${get('puls_queda') === 'Sim' ? 'presente' : 'ausente'}. `;
+  }
+  if (get('puls_alergia') !== 'Não se aplica' && get('puls_alergia')) {
+    txt += `Pulseira de alergia ${get('puls_alergia') === 'Sim' ? 'presente' : 'ausente'}. `;
+  }
+
+  // Segurança do leito
+  const segItems = [];
+  if (get('cama_baixa') === 'Sim') segItems.push('cama em posição baixa');
+  if (get('rodas') === 'Sim') segItems.push('rodas travadas');
+  if (get('grades') === 'Sim') segItems.push('grades elevadas');
+  if (segItems.length) txt += `Leito em segurança: ${segItems.join(', ')}. `;
+
+  // Campainha e orientações — com concordância
+  const oriItems = [];
+  if (get('camp_local') === 'Sim') oriItems.push('localizada');
+  if (get('camp_testada') === 'Sim') oriItems.push('testada');
+  if (oriItems.length) txt += `Campainha ${oriItems.join(' e ')}. `;
+  if (get('camp_ori') === 'Sim') txt += `Paciente ${g('orientado','orientada')} sobre uso da campainha. `;
+  if (get('nao_levantar') === 'Sim') txt += `${g('Orientado','Orientada')} a não levantar do leito sem auxílio. `;
+  if (get('prot_queda') === 'Sim') txt += 'Protocolo de prevenção de queda orientado. ';
+  if (get('compreendeu')) txt += `Paciente ${get('compreendeu') === 'Sim' ? 'compreendeu as orientações' : get('compreendeu') === 'Não' ? 'não compreendeu as orientações' : 'não foi possível avaliar compreensão'}. `;
+
+  // Acompanhante — com concordância do acompanhante
+  if (get('acomp') === 'Sim') {
+    const acompTipo = get('acomp_tipo');
+    const acompFemWords = ['mãe','filha','irmã','esposa','avó','neta','tia','prima','cuidadora'];
+    const acompFem = acompFemWords.includes(acompTipo);
+    const ag = (masc, femin) => acompFem ? femin : masc;
+
+    txt += 'Acompanhante presente';
+    if (acompTipo) txt += ` (${acompTipo})`;
+    const aoriItems = [];
+    if (get('acomp_camp') === 'Sim') aoriItems.push(`${ag('orientado','orientada')} sobre uso da campainha`);
+    if (get('acomp_aux') === 'Sim') aoriItems.push(`${ag('orientado','orientada')} a acionar a equipe antes da deambulação`);
+    if (aoriItems.length) txt += `, ${aoriItems.join(' e ')}`;
+    txt += '. ';
+  }
+
+  // Dor
+  if (get('dor') === 'Sim') {
+    txt += `Refere dor`;
+    if (get('dor_local')) txt += ` em ${get('dor_local')}`;
+    if (get('dor_escala')) txt += `, intensidade ${get('dor_escala')}/10`;
+    txt += '. ';
+  } else if (get('dor') === 'Não') {
+    txt += 'Sem queixa álgica no momento. ';
+  }
+
+  // HGT
+  if (get('hgt') === 'Sim' && get('hgt_valor')) {
+    txt += `HGT: ${get('hgt_valor')} mg/dL. `;
+  } else if (get('hgt') === 'Não') {
+    txt += 'HGT não realizado. ';
+  }
+
+  // ── DISPOSITIVOS em ordem céfalo-podal ──
+  // Ordem: O2 (face/nariz) → SNE/SNG/SOG (nariz/boca) → AVP/CVC/PICC (MS) → Dreno → SVD (pelve)
+
+  // O2
+  if (get('o2') === 'Sim') {
+    txt += `Mantendo oxigenoterapia com ${get('o2_disp') || 'dispositivo não informado'}`;
+    if (get('o2_fluxo')) txt += ` a ${get('o2_fluxo')} L/min`;
+    txt += '. ';
+  }
+
+  // Sonda nasal/oral (SNE, SNG, SOG) — cabeça
+  const sondaTipo = get('sonda_tipo');
+  function buildSondaTxt() {
+    let s = `Mantendo ${sondaTipo || 'sonda'} instalada`;
+    if (sondaTipo === 'SNE' || sondaTipo === 'SNG') {
+      const narina = get('sonda_narina');
+      if (narina) s += ` fixada em ${narina}`;
+    } else if (sondaTipo === 'SOG') {
+      s += ` via CO (cavidade oral)`;
+    }
+    if (get('sonda_data')) s += ` em ${formatDate(get('sonda_data'))}`;
+    if (get('sonda_fix') === 'Sim') s += ', com fixação adequada';
+    if (get('sonda_tracao') === 'Sim') s += ', sem tração';
+    if (get('sonda_debito')) s += `, débito de ${get('sonda_debito')} mL`;
+    if (get('sonda_aspecto')) s += ` (${get('sonda_aspecto')})`;
+    return s + '. ';
+  }
+
+  const sondaNaoVesical = get('sonda') === 'Sim' && sondaTipo && sondaTipo !== 'SVD';
+  const sondaVesical = get('sonda') === 'Sim' && sondaTipo === 'SVD';
+
+  if (sondaNaoVesical) txt += buildSondaTxt();
+
+  // Acesso Venoso (membros superiores)
+  if (get('av') === 'Sim') {
+    txt += `Mantendo ${get('av_tipo') || 'acesso venoso'}`;
+    if (get('av_local')) txt += ` em ${get('av_local')}`;
+    if (get('av_calibre')) txt += `, calibre ${get('av_calibre')}`;
+    if (get('av_data_puncao')) txt += `, puncionado em ${formatDate(get('av_data_puncao'))}`;
+    if (get('av_pervio') === 'Sim') txt += ', pérvio';
+    if (get('av_status') === 'Salinizado') {
+      txt += ', salinizado';
+    } else if (get('av_status') === 'Em Soroterapia') {
+      txt += ', em soroterapia';
+      if (get('av_solucao')) txt += ` com ${get('av_solucao')}`;
+      if (get('av_volume')) txt += `, ${get('av_volume')} mL`;
+      if (get('av_vel_valor') && get('av_vel_tipo')) {
+        const unidade = get('av_vel_tipo') === 'BIC (mL/h)' ? 'mL/h em BIC' : 'gtts/min';
+        txt += `, a ${get('av_vel_valor')} ${unidade}`;
+      }
+    }
+    const flog = [];
+    if (get('av_dor') === 'Não' && get('av_calor') === 'Não' && get('av_rubor') === 'Não') {
+      flog.push('sem sinais flogísticos');
+    } else {
+      if (get('av_dor') === 'Sim') flog.push('dor');
+      if (get('av_calor') === 'Sim') flog.push('calor');
+      if (get('av_rubor') === 'Sim') flog.push('rubor');
+    }
+    if (flog.length) txt += `, ${flog.join(', ')}`;
+    const curativo = [];
+    if (get('curativo_limpo') === 'Sim') curativo.push('limpo');
+    if (get('curativo_seco') === 'Sim') curativo.push('seco');
+    if (get('curativo_integro') === 'Sim') curativo.push('íntegro');
+    if (curativo.length) txt += `, curativo ${curativo.join(', ')}`;
+    if (get('av_data_curativo')) txt += `, curativo realizado em ${formatDate(get('av_data_curativo'))}`;
+    if (get('av_data_equipo')) txt += `, equipo trocado em ${formatDate(get('av_data_equipo'))}`;
+    txt += '. ';
+  } else if (get('av') === 'Não') {
+    txt += 'Sem acesso venoso. ';
+  }
+
+  // Dreno
+  if (get('dreno') === 'Sim') {
+    txt += `Mantendo dreno ${get('dreno_tipo') || ''}`;
+    if (get('dreno_local')) txt += ` em ${get('dreno_local')}`;
+    if (get('dreno_vol')) txt += `, volume de ${get('dreno_vol')} mL`;
+    if (get('dreno_aspecto')) txt += ` (${get('dreno_aspecto')})`;
+    txt += '. ';
+  }
+
+  // SVD (pelve — por último)
+  if (sondaVesical) txt += buildSondaTxt();
+
+  // Pele
+  txt += `Pele ${(get('pele_int') || 'sem registro').toLowerCase()}`;
+  if (get('edema') === 'Sim') txt += `, com edema${get('edema_desc') ? ' ' + get('edema_desc') : ''}`;
+  else txt += ', sem edema';
+  if (get('hiper') === 'Sim') txt += `, com hiperemia${get('hiper_local') ? ' em ' + get('hiper_local') : ''}`;
+  if (get('lpp') === 'Sim') {
+    txt += `. LPP`;
+    if (get('lpp_local')) txt += ` em ${get('lpp_local')}`;
+    if (get('lpp_estagio')) txt += `, estágio ${get('lpp_estagio')}`;
+    if (get('lpp_cobertura')) txt += `, cobertura ${get('lpp_cobertura')}`;
+    if (get('lpp_exsudato')) txt += `, exsudato ${get('lpp_exsudato')}`;
+  }
+  if (get('outras_lesoes') === 'Sim' && get('outras_lesoes_desc')) {
+    txt += `. Outras lesões: ${get('outras_lesoes_desc')}`;
+  }
+  txt += '. ';
+
+  // Dieta
+  if (get('dieta_tipo')) {
+    txt += `Dieta ${get('dieta_tipo').toLowerCase()}`;
+    if (get('dieta_aceit')) txt += ` com ${get('dieta_aceit').toLowerCase()} aceitação`;
+    txt += '. ';
+  }
+
+  // Diurese
+  if (get('diurese_origem') === 'Não houve') {
+    txt += 'Sem diurese no período. ';
+  } else if (get('diurese_origem')) {
+    txt += `Diurese ${get('diurese_origem').toLowerCase()}`;
+    if (get('diurese_qtd')) txt += `, ${get('diurese_qtd')} mL`;
+    if (get('diurese_aspecto')) txt += `, aspecto ${get('diurese_aspecto')}`;
+    txt += '. ';
+  }
+
+  // Evacuação
+  if (get('evac_origem') === 'Não houve') {
+    txt += 'Sem evacuação no período. ';
+  } else if (get('evac_origem')) {
+    txt += `Evacuação ${get('evac_origem').toLowerCase()}`;
+    if (get('evac_consist')) txt += `, consistência ${get('evac_consist').toLowerCase()}`;
+    if (get('evac_qtd')) txt += `. ${get('evac_qtd')}`;
+    txt += '. ';
+  }
+
+  // Intercorrências
+  if (get('intercorr') === 'Não') {
+    txt += 'Sem intercorrências no período. ';
+  } else if (get('intercorr') === 'Sim') {
+    const tipos = getArr('intercorr_tipo');
+    txt += `Intercorrência(s): ${tipos.join(', ') || 'não especificado'}. `;
+    if (get('intercorr_desc')) txt += get('intercorr_desc') + ' ';
+  }
+
+  // ── SSVV SEMPRE NO FINAL ──
+  const sv = [];
+  if (get('sv_pa')) sv.push(`PA: ${get('sv_pa')} mmHg`);
+  if (get('sv_fc')) sv.push(`FC: ${get('sv_fc')} bpm`);
+  if (get('sv_fr')) sv.push(`FR: ${get('sv_fr')} irpm`);
+  if (get('sv_temp')) sv.push(`Tax: ${get('sv_temp')}°C`);
+  if (get('sv_sat')) sv.push(`Sat: ${get('sv_sat')}%`);
+  if (sv.length) txt += `Realizado SSVV — ${sv.join(' | ')}.`;
+
+  // show result
+  document.getElementById('result-title').textContent = `${p.leito} — ${p.nome}`;
+  document.getElementById('result-text').textContent = txt.trim();
+  showScreen('result');
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function copiarResumo() {
+  const t = document.getElementById('result-text').textContent;
+  navigator.clipboard.writeText(t).then(() => alert('Resumo copiado!')).catch(() => {
+    prompt('Copie o texto abaixo:', t);
+  });
+}
+
+function copiarTexto(t) {
+  navigator.clipboard.writeText(t).then(() => alert('Copiado!')).catch(() => {
+    prompt('Copie o texto abaixo:', t);
+  });
+}
+
+function finalizarAdmissao() {
+  const txt = document.getElementById('result-text').textContent;
+  pacientes[currentPatientId].admissaoFeita = true;
+  pacientes[currentPatientId].admissaoTexto = txt;
+  salvarLS();
+  showScreen('home');
+  renderPacientes();
+}
+
+function escapeBacktick(s) {
+  return (s || '').replace(/`/g, '\\`').replace(/\$/g,'\\$');
+}
+
+function escapeHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggleCollapse(id, e) {
+  const card = document.getElementById('card-' + id);
+  if (!card) return;
+  const isCollapsed = card.classList.toggle('collapsed');
+  const btn = document.getElementById('collapse-btn-' + id);
+  if (btn) btn.textContent = isCollapsed ? '+' : '−';
+}
+
+function toggleMenu(id, e) {
+  e.stopPropagation();
+  // close all others first
+  document.querySelectorAll('.menu-dropdown.open').forEach(m => {
+    if (m.id !== 'menu-' + id) m.classList.remove('open');
+  });
+  document.getElementById('menu-' + id)?.classList.toggle('open');
+}
+
+function closeMenu(id) {
+  document.getElementById('menu-' + id)?.classList.remove('open');
+}
+
+// close menus on outside click
+document.addEventListener('click', () => {
+  document.querySelectorAll('.menu-dropdown.open').forEach(m => m.classList.remove('open'));
+});
+
+// ════════════════════════════════════════════
+// MODAL LISTA DE MEDICAÇÕES
+// ════════════════════════════════════════════
+function renderModalMedList(filtro) {
+  const body = document.getElementById('modal-medlist-body');
+  const f = normMed(filtro || '');
+  let lista = MED_DB;
+  if (f) {
+    lista = MED_DB.filter(m => {
+      const mn = normMed(m.n), mp = normMed(m.p);
+      const mc = (m.c || []).map(x => normMed(x));
+      return mn.includes(f) || mp.includes(f) || mc.some(c => c.includes(f)) ||
+        levenshtein(f, mn) <= 2 || mc.some(c => levenshtein(f, c) <= 2);
+    });
+  }
+  // Update count badge
+  const countEl = document.getElementById('modal-medlist-count');
+  if (countEl) {
+    if (f) {
+      countEl.textContent = `${lista.length} resultado${lista.length !== 1 ? 's' : ''}`;
+    } else {
+      countEl.textContent = `${MED_DB.length} medicações`;
+    }
+  }
+  if (!lista.length) {
+    body.innerHTML = '<div class="empty-state">Nenhuma medicação encontrada.</div>';
+    return;
+  }
+  const grupos = {};
+  lista.forEach(m => { if (!grupos[m.g]) grupos[m.g] = []; grupos[m.g].push(m); });
+  let html = '';
+  Object.keys(grupos).forEach(g => {
+    html += `<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin:12px 0 7px;">${g}</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;">`;
+    grupos[g].forEach(m => {
+      const comercial = (m.c && m.c.length) ? m.c.slice(0,3).join(' · ') : '';
+      html += `<div style="display:flex;flex-direction:column;gap:1px;background:rgba(200,168,80,.07);border:1px solid rgba(200,168,80,.16);border-radius:20px;padding:5px 13px;">
+        <span style="font-size:12px;font-weight:700;color:var(--accent);">${m.n}</span>
+        ${comercial ? `<span style="font-size:10px;color:var(--muted);">${comercial}</span>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  });
+  body.innerHTML = html;
+}
+
+function abrirModalMedList() {
+  const overlay = document.getElementById('modal-medlist-overlay');
+  document.getElementById('modal-medlist-search').value = '';
+  renderModalMedList('');
+  overlay.style.display = 'flex';
+  setTimeout(() => document.getElementById('modal-medlist-search').focus(), 80);
+}
+
+function fecharModalMedList() {
+  document.getElementById('modal-medlist-overlay').style.display = 'none';
+}
+
+function fecharModalMedListOverlay(e) {
+  if (e.target === document.getElementById('modal-medlist-overlay')) fecharModalMedList();
+}
+
+function filtrarModalMedList(v) { renderModalMedList(v); }
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { fecharModalMedList(); fecharPainelAnotacoes(); fecharHeaderMenu(); } });
+
+// ════════════════════════════════════════════
+// HEADER MENU (três pontos)
+// ════════════════════════════════════════════
+function toggleHeaderMenu(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('header-dropdown');
+  dd.classList.toggle('open');
+  if (dd.classList.contains('open')) {
+    setTimeout(() => document.addEventListener('click', fecharHeaderMenu, {once:true}), 50);
+  }
+}
+
+function fecharHeaderMenu() {
+  document.getElementById('header-dropdown')?.classList.remove('open');
+}
+
+// ════════════════════════════════════════════
+// PAINEL GERAL DE ANOTAÇÕES
+// ════════════════════════════════════════════
+function abrirPainelAnotacoes() {
+  const overlay = document.getElementById('modal-painel-overlay');
+  renderPainelAnotacoes();
+  overlay.style.display = 'block';
+  overlay.scrollTop = 0;
+}
+
+function fecharPainelAnotacoes() {
+  document.getElementById('modal-painel-overlay').style.display = 'none';
+}
+
+function fecharPainelAnotacoesOverlay(e) {
+  if (e.target === document.getElementById('modal-painel-overlay')) fecharPainelAnotacoes();
+}
+
+function renderPainelAnotacoes() {
+  const body = document.getElementById('modal-painel-body');
+  const ids = Object.keys(pacientes);
+
+  if (!ids.length) {
+    body.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px 0;font-size:13px;">Nenhum paciente cadastrado no momento.</div>';
+    return;
+  }
+
+  let html = '';
+  ids.forEach((id, idx) => {
+    const p = pacientes[id];
+
+    // Coletar todas as anotações em ordem cronológica
+    const anotacoes = [];
+
+    // Anotação de admissão (gerada automaticamente)
+    if (p.admissaoFeita && p.admissaoTexto) {
+      anotacoes.push({ tipo: 'Admissão', time: null, texto: p.admissaoTexto });
+    }
+
+    // Anotações manuais (notes)
+    (p.notes || []).forEach(n => {
+      anotacoes.push({ tipo: 'Anotação', time: n.time, texto: n.text });
+    });
+
+    const separador = idx > 0 ? 'border-top:1px solid rgba(200,168,80,.10);padding-top:20px;margin-top:4px;' : '';
+
+    html += `
+      <div style="${separador}margin-bottom:20px;">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px;">
+          <span style="font-size:18px;font-weight:800;color:var(--accent);letter-spacing:.02em;">${escapeHtml(p.leito)}</span>
+          <span style="font-size:14px;font-weight:500;color:var(--fg);">${escapeHtml(p.nome)}</span>
+        </div>`;
+
+    if (!anotacoes.length) {
+      html += `<div style="font-size:12px;color:var(--muted);padding:8px 12px;background:rgba(200,168,80,.04);border:1px solid rgba(200,168,80,.08);border-radius:8px;">Nenhuma anotação registrada.</div>`;
+    } else {
+      anotacoes.forEach(a => {
+        const timeBadge = a.time
+          ? `<span style="font-size:10px;color:var(--muted);background:rgba(200,168,80,.08);border:1px solid rgba(200,168,80,.12);border-radius:20px;padding:2px 8px;white-space:nowrap;">${escapeHtml(a.time)}</span>`
+          : `<span style="font-size:10px;color:var(--accent);background:rgba(200,168,80,.10);border:1px solid rgba(200,168,80,.18);border-radius:20px;padding:2px 8px;">Admissão</span>`;
+        html += `
+          <div style="margin-bottom:8px;background:rgba(200,168,80,.03);border:1px solid rgba(200,168,80,.09);border-radius:10px;padding:10px 13px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">${timeBadge}</div>
+            <div style="font-size:13px;color:var(--fg);line-height:1.6;white-space:pre-wrap;">${escapeHtml(a.texto)}</div>
+          </div>`;
+      });
+    }
+
+    html += `</div>`;
+  });
+
+  body.innerHTML = html;
+}
+
+function copiarTodasAnotacoes() {
+  const ids = Object.keys(pacientes);
+  if (!ids.length) { alert('Nenhum paciente cadastrado.'); return; }
+
+  const linhas = [];
+  ids.forEach(id => {
+    const p = pacientes[id];
+    linhas.push(`Quarto ${p.leito}`);
+    linhas.push(p.nome);
+
+    const anotacoes = [];
+    if (p.admissaoFeita && p.admissaoTexto) {
+      anotacoes.push({ time: null, texto: p.admissaoTexto });
+    }
+    (p.notes || []).forEach(n => {
+      anotacoes.push({ time: n.time, texto: n.text });
+    });
+
+    if (!anotacoes.length) {
+      linhas.push('(Nenhuma anotação registrada)');
+    } else {
+      anotacoes.forEach((a, i) => {
+        if (a.time) linhas.push(`[${a.time}]`);
+        else linhas.push('[Admissão]');
+        linhas.push(a.texto);
+        if (i < anotacoes.length - 1) linhas.push('');
+      });
+    }
+    linhas.push('');
+  });
+
+  const texto = linhas.join('\n').trim();
+  navigator.clipboard.writeText(texto)
+    .then(() => alert('Todas as anotações copiadas!'))
+    .catch(() => prompt('Copie o texto abaixo:', texto));
+}
+
+// init
+carregarLS();
+renderPacientes();
+</script>
+
+<script>
+  (()=>{
+    'use strict';
+
+    const canvas = document.getElementById('ascii-bg');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d', {alpha:false});
+    const DPR = Math.min(window.devicePixelRatio||1, 2);
+
+    /* ── paleta outono fixa ── */
+    const S = {
+      water_sh: ['#5a4a3a','#6a5a48','#7a6a55','#8a7a65'],
+      water_dp: ['#3a4a5a','#4a5a6a','#5a6070'],
+      shore:    ['#6a4a2a','#7a5a38','#8a6a45','#9a7a55'],
+      land:     ['#3a2818','#4a3820','#5a4828','#6a5835','#7a6840','#8a7850'],
+      green:    ['#6a4020','#7a5028','#8a6035'],
+      flower:   ['#d84020','#e05030','#c85028','#b04020'],
+      dot:      ['#3a2818','#442e20','#503828'],
+      bgBase:   '#080604',
+      particle: '#8a6a4a',
+    };
+
+    /* ── zonas ── */
+    const LAND=0,SHORE_OUTER=1,SHORE_INNER=2,WATER_SHALLOW=3,WATER_DEEP=4,WATER_DEEPEST=5;
+    const ZC = {
+      0:[' ',' ',' ',' ','.','.','.','"','"',',','·'],
+      1:[' ',' ',' ','.','.','"',',','♣'],
+      2:['|','|','¦',';',' ','♠'],
+      3:[' ',' ','~','~','·'],
+      4:[' ',' ',' ','~','·'],
+      5:[' ',' ',' ','·']
+    };
+    const WCHARS = ['·','∘','~','∿','≈'];
+    const FCHARS = ['·','*','✿','❀'];
+    const WZ = [WATER_SHALLOW,WATER_DEEP,WATER_DEEPEST];
+
+    /* ── dimensões ── */
+    const FONT_PX = 14*DPR;
+    const CHAR_W  = (25/3)*DPR;
+    const LINE_H  = (67/3)*DPR;
+    const TILE_ROWS = 160;
+    let cW, cH, COLS, VISIBLE_ROWS;
+
+    function resize(){
+      cW = window.innerWidth; cH = window.innerHeight;
+      canvas.width  = Math.round(cW*DPR); canvas.height = Math.round(cH*DPR);
+      canvas.style.width  = cW+'px'; canvas.style.height = cH+'px';
+      COLS = Math.ceil(canvas.width/CHAR_W)+2;
+      VISIBLE_ROWS = Math.ceil(canvas.height/LINE_H)+2;
+    }
+    resize();
+
+    /* ── noise Perlin ── */
+    function fade(t){return t*t*t*(t*(6*t-15)+10);}
+    function grad(h,x,y){const a=3&h,r=a<2?x:y,i=a<2?y:x;return((1&a)?-r:r)+((2&a)?-i:i);}
+    const perm=(function(seed){let p=[];for(let i=0;i<256;i++)p[i]=i;let s=seed;for(let i=255;i>0;i--){s=(s*16807)%2147483647;const j=s%(i+1);[p[i],p[j]]=[p[j],p[i]];}return[...p,...p];})(42);
+    function snoise(x,y){
+      const xi=Math.floor(x)&255,yi=Math.floor(y)&255;
+      const xf=x-Math.floor(x),yf=y-Math.floor(y);
+      const u=fade(xf),v=fade(yf);
+      const aa=perm[perm[xi]+yi],ab=perm[perm[xi]+yi+1],ba=perm[perm[xi+1]+yi],bb=perm[perm[xi+1]+yi+1];
+      const r1=grad(aa,xf,yf)+(grad(ba,xf-1,yf)-grad(aa,xf,yf))*u;
+      const r2=grad(ab,xf,yf-1)+(grad(bb,xf-1,yf-1)-grad(ab,xf,yf-1))*u;
+      return r1+(r2-r1)*v;
+    }
+
+    /* ── RNG determinístico ── */
+    let rngS=42;
+    function rng(){rngS=(rngS*16807)%2147483647;return rngS/2147483647;}
+
+    /* ── color helpers ── */
+    function pickColor(arr,lp){return arr[Math.min(Math.floor(lp*arr.length),arr.length-1)];}
+    function colorFor(zone,ch,lp){
+      if('~·∘∿≈'.includes(ch)){
+        if(zone===WATER_SHALLOW) return pickColor(S.water_sh,lp);
+        return pickColor(S.water_dp,lp);
+      }
+      if('❀✿*'.includes(ch)) return pickColor(S.flower,lp);
+      if('"'===ch||','===ch||"'"===ch||';'===ch||'`'===ch) return pickColor(S.land,lp);
+      if('|'===ch||'¦'===ch) return pickColor(S.shore,lp);
+      if('♣'===ch||'♠'===ch) return pickColor(S.green,lp);
+      if('·'===ch) return pickColor(S.flower,lp);
+      if('.'===ch) return pickColor(S.dot,lp);
+      if('/'===ch||'\\'===ch) return pickColor(S.green,lp);
+      return '#505050';
+    }
+
+    /* ── tile ── */
+    let TILE=[], RDATA=[];
+    function buildTile(){
+      TILE=[]; RDATA=[];
+      const seed=42;
+      const minW=Math.floor(COLS*0.35), maxW=Math.floor(COLS*0.52);
+      const cx=COLS/2;
+      for(let r=0;r<TILE_ROWS;r++){
+        const meander=
+          0.38*Math.sin(0.008*r+seed)*Math.cos(0.003*r+1.1)+
+          0.28*Math.sin(0.018*r+seed+2.3)+
+          0.18*Math.sin(0.035*r+seed+4.7)*Math.cos(0.012*r+0.5)+
+          0.10*Math.sin(0.055*r+seed+1.9)+
+          0.06*Math.sin(0.09*r+seed+3.3);
+        const center=Math.round(cx+meander*0.55*(0.3*COLS));
+        const rwF=1+0.3*Math.sin(0.012*r+seed+100)*Math.cos(0.007*r+2)+0.15*Math.sin(0.025*r+seed+200)+0.1*Math.sin(0.04*r+seed+300);
+        const rw=Math.round(Math.max(minW,Math.min(maxW,(minW+maxW)/2*rwF)));
+        const lsh=Math.max(0,center-Math.round(rw/2));
+        const rsh=Math.min(COLS-1,center+Math.round(rw/2));
+        const lo=Math.max(2,Math.round(12*(1+0.35*Math.sin(0.025*r+seed+200)*0.5)));
+        const li=Math.max(1,Math.round(3*(1+0.3*Math.sin(0.025*r+seed+300)*0.4)));
+        const ld=Math.max(2,Math.round(5*(1+0.35*Math.sin(0.025*r+seed+400)*0.5)));
+        const lx=Math.max(2,Math.round(10*(1+0.35*Math.sin(0.025*r+seed+500)*0.7)));
+        RDATA.push({lsh,rsh,center});
+        const row=[];
+        for(let c=0;c<COLS;c++){
+          const lt=c-lsh,rt=rsh-c;
+          let zone;
+          if(c<lsh-lo-li) zone=LAND;
+          else if(c<lsh-li) zone=SHORE_OUTER;
+          else if(c<lsh) zone=SHORE_INNER;
+          else if(c>rsh+lo+li) zone=LAND;
+          else if(c>rsh+li) zone=SHORE_OUTER;
+          else if(c>rsh) zone=SHORE_INNER;
+          else{
+            const dc=Math.abs(c-center);
+            if(dc<lx/2) zone=WATER_DEEPEST;
+            else if(Math.min(lt,rt)<ld) zone=WATER_SHALLOW;
+            else zone=WATER_DEEP;
+          }
+          const chars=ZC[zone];
+          const ch=chars[Math.floor(rng()*chars.length)];
+          row.push({ch,base:ch,zone,lp:0.5,op:1,rot:0,vis:true});
+        }
+        TILE.push(row);
+      }
+    }
+
+    function tileRow(r){return((r%TILE_ROWS)+TILE_ROWS)%TILE_ROWS;}
+    function tileRdata(r){return RDATA[tileRow(r)];}
+
+    /* ── update tile (animação do rio) ── */
+    let bgFrame=0;
+    function updateTile(f){
+      const t=f*0.13, tw=t*0.65;
+      for(let r=0;r<TILE_ROWS;r++){
+        for(let c=0;c<COLS;c++){
+          const cell=TILE[r][c];
+          if(WZ.includes(cell.zone)){
+            const n=snoise(0.035*c+0.0005*t,0.018*r-0.0007*t);
+            const thr=cell.zone===WATER_DEEPEST?-0.22:cell.zone===WATER_DEEP?-0.02:-0.2;
+            const p=n-thr;
+            if(p>0){
+              cell.vis=true;
+              const idx=Math.min(Math.floor((p/0.6)*WCHARS.length),WCHARS.length-1);
+              cell.ch=WCHARS[idx];
+              cell.op=Math.min(1,p*2.5);
+              const nx2=snoise(0.035*c+0.0005*t+0.5,0.018*r-0.0007*t);
+              cell.rot=90+(n-nx2)*80;
+            } else {
+              cell.vis=false; cell.ch=' '; cell.op=0;
+            }
+            const la=Math.PI/2+0.25*snoise(0.0015*t,100);
+            cell.lp=Math.max(0,Math.min(1,(Math.sin(c*Math.cos(la)*0.07+r*Math.sin(la)*0.045-0.01*t)+0.2*snoise(0.04*c+50,0.04*r+50)+1)*0.45));
+          } else {
+            const wa=0.45*snoise(0.003*tw,0);
+            cell.lp=Math.max(0,Math.min(1,(Math.sin(c*Math.cos(wa)*0.055+0.28*Math.sin(wa)*r*0.038-0.009*tw)+0.1*snoise(0.025*c,0.025*r)+1)*0.5));
+            if(cell.zone===SHORE_INNER||cell.zone===SHORE_OUTER) cell.rot=((cell.lp-0.5)*2)*18;
+            if((cell.zone===LAND||cell.zone===SHORE_OUTER)&&cell.base==='·'){
+              const fi=Math.min(Math.floor(cell.lp*FCHARS.length),FCHARS.length-1);
+              cell.ch=FCHARS[fi];
+            }
+          }
+        }
+      }
+    }
+
+    /* ── partículas ── */
+    let particles=[], pid=0;
+    function spawnParticles(){
+      const startR=0;
+      if(Math.random()<0.04&&particles.filter(p=>p.t==='w').length<10){
+        const r=startR+Math.floor(Math.random()*VISIBLE_ROWS);
+        const rd=tileRdata(r); if(!rd) return;
+        const c=rd.lsh+Math.random()*(rd.rsh-rd.lsh);
+        particles.push({id:pid++,x:c,yr:r,ch:['·','∘','○'][Math.floor(Math.random()*3)],op:0,age:0,maxAge:100+Math.random()*80,t:'w'});
+      }
+      if(Math.random()<0.05&&particles.filter(p=>p.t==='b').length<8){
+        const r=startR+Math.floor(Math.random()*VISIBLE_ROWS);
+        const rd=tileRdata(r); if(!rd) return;
+        const c=(rd.lsh+rd.rsh)/2+(Math.random()-0.5)*(rd.rsh-rd.lsh)*0.35;
+        particles.push({id:pid++,x:c,yr:r,ch:'°',op:0,age:0,maxAge:70+Math.random()*70,t:'b',tw:Math.random()*Math.PI*2});
+      }
+    }
+    function updateParticles(){
+      const next=[];
+      for(const p of particles){
+        const nx=p.x+0.03*Math.sin(0.1*p.yr+0.07*p.x+0.018*p.age);
+        const nyr=p.yr+0.028; const age=p.age+1; let op;
+        if(p.t==='b'){p.tw=(p.tw||0)+0.05;op=Math.min(1,age/10)*Math.max(0,(p.maxAge-age)/15)*(0.75+0.2*Math.sin(p.tw));}
+        else{op=age<15?age/15*0.8:age>p.maxAge-20?(p.maxAge-age)/20*0.8:0.8;}
+        if(age<p.maxAge) next.push({...p,x:nx,yr:nyr,age,op});
+      }
+      particles=next;
+    }
+
+    /* ── sprites de terra ── */
+    let landSprites=[];
+    const FARM_LINES=['.-.___|','|=|/  \\','|_|___|'];
+    function farmColor(ch){
+      const p={roof:['#703018','#803820'],wall:['#a89060','#b8a070'],detail:['#805030','#704028'],win:['#c8a858','#d8b868']};
+      if(ch==='/'||ch==='\\') return p.roof[0];
+      if(ch==='-'||ch==='_') return p.detail[0];
+      if(ch==='|') return p.wall[0];
+      return p.detail[1];
+    }
+    function spawnLandSprite(){
+      if(landSprites.filter(s=>s.kind==='farm').length>=2) return;
+      const lines=FARM_LINES;
+      const w=lines.reduce((m,l)=>Math.max(m,l.length),0), h=lines.length;
+      const candidates=[];
+      for(let r=3;r<TILE_ROWS-h-2;r++){
+        const rd=RDATA[r]; if(!rd) continue;
+        const ls=rd.lsh-w-3, rs=rd.rsh+3;
+        if(ls>2) candidates.push({r,c:Math.floor(Math.random()*Math.max(1,ls-1))+1});
+        if(rs+w<COLS-1) candidates.push({r,c:rs+Math.floor(Math.random()*Math.max(1,COLS-rs-w-1))});
+      }
+      if(!candidates.length) return;
+      const pos=candidates[Math.floor(Math.random()*candidates.length)];
+      for(const sp of landSprites){
+        if(Math.abs(sp.r-pos.r)<h+2&&Math.abs(sp.c-pos.c)<w+4) return;
+      }
+      landSprites.push({kind:'farm',lines,colorFn:farmColor,r:pos.r,c:pos.c,op:0,phase:'in',born:bgFrame,lifeMax:700+Math.floor(Math.random()*500)});
+    }
+    function updateLandSprites(){
+      const FI=100,FO=150;
+      landSprites=landSprites.filter(sp=>{
+        const age=bgFrame-sp.born;
+        if(sp.phase==='in'){sp.op=Math.min(1,age/FI);if(age>=FI)sp.phase='hold';}
+        else if(sp.phase==='hold'){if(age>=sp.lifeMax)sp.phase='out';}
+        else if(sp.phase==='out'){sp.op=Math.max(0,1-(age-sp.lifeMax)/FO);if(sp.op<=0)return false;}
+        return true;
+      });
+      if(Math.random()<0.003) spawnLandSprite();
+    }
+
+    /* ── tartarugas ── */
+    let turtles=[];
+    function spawnTurtle(){
+      if(turtles.length>=3) return;
+      const r=Math.floor(Math.random()*TILE_ROWS);
+      const rd=RDATA[r]; if(!rd) return;
+      const side=Math.random()<0.5?'left':'right';
+      const c=side==='left'?rd.lsh+1:rd.rsh-2;
+      if(c<1||c>=COLS-2) return;
+      for(const t of turtles){if(Math.abs(t.r-r)<3&&Math.abs(t.c-c)<4) return;}
+      turtles.push({r,c,op:0,phase:'in',born:bgFrame,lifeMax:500+Math.floor(Math.random()*400)});
+    }
+    function updateTurtles(){
+      const FI=80,FO=100;
+      turtles=turtles.filter(t=>{
+        const age=bgFrame-t.born;
+        if(t.phase==='in'){t.op=Math.min(1,age/FI);if(age>=FI)t.phase='hold';}
+        else if(t.phase==='hold'){if(age>=t.lifeMax)t.phase='out';}
+        else if(t.phase==='out'){t.op=Math.max(0,1-(age-t.lifeMax)/FO);if(t.op<=0)return false;}
+        return true;
+      });
+      if(Math.random()<0.002) spawnTurtle();
+    }
+
+    /* ── patinhos ── */
+    let ducks=[];
+    function spawnDuck(){
+      if(ducks.length>=2) return;
+      const r=Math.floor(Math.random()*VISIBLE_ROWS);
+      const rd=tileRdata(r); if(!rd) return;
+      const c=rd.lsh+1+Math.random()*(rd.rsh-rd.lsh-2);
+      for(const d of ducks){if(Math.abs(d.r-r)<3&&Math.abs(d.c-c)<5) return;}
+      ducks.push({r,c,vy:0.012+Math.random()*0.008,op:0});
+    }
+    function updateDucks(){
+      ducks=ducks.filter(d=>{
+        const rd=tileRdata(Math.floor(d.r));
+        if(rd){const cx=(rd.lsh+rd.rsh)/2; d.c+=(cx-d.c)*0.01;}
+        d.r+=d.vy; d.op=Math.min(1,d.op+0.015);
+        return d.r<VISIBLE_ROWS+4;
+      });
+      if(Math.random()<0.0008) spawnDuck();
+    }
+
+    /* ── renderização ── */
+    const MONO='"SF Mono",Monaco,Inconsolata,"Courier New",monospace';
+    function renderBG(){
+      ctx.fillStyle=S.bgBase; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.font=`${FONT_PX}px ${MONO}`; ctx.textBaseline='top';
+      const startR=0, endR=startR+VISIBLE_ROWS+1;
+      for(let r=startR;r<=endR;r++){
+        const py=r*LINE_H; if(py<-LINE_H||py>canvas.height+LINE_H) continue;
+        const row=TILE[tileRow(r)];
+        for(let c=0;c<COLS;c++){
+          const cell=row[c]; const ch=cell.ch; if(!ch||ch===' ') continue;
+          const px=c*CHAR_W, lp=cell.lp||0.5;
+          const color=colorFor(cell.zone,ch,lp);
+          if(WZ.includes(cell.zone)&&'~·∘∿≈'.includes(ch)&&cell.vis&&cell.op>0.05){
+            ctx.save(); ctx.globalAlpha=Math.min(1,cell.op);
+            const cxp=px+CHAR_W/2, cyp=py+FONT_PX/2;
+            ctx.translate(cxp,cyp); ctx.rotate((cell.rot||0)*Math.PI/180); ctx.translate(-cxp,-cyp);
+            ctx.fillStyle=color; ctx.fillText(ch,px,py); ctx.restore();
+          } else {
+            ctx.fillStyle=color; ctx.fillText(ch,px,py);
+          }
+        }
+      }
+
+      /* partículas */
+      for(const p of particles){
+        const py=p.yr*LINE_H; if(py<-LINE_H||py>canvas.height+LINE_H) continue;
+        ctx.save(); ctx.globalAlpha=Math.max(0,p.op);
+        ctx.fillStyle=S.particle; ctx.fillText(p.ch,p.x*CHAR_W,py); ctx.restore();
+      }
+
+      /* fazendas */
+      const SZ=Math.round(FONT_PX*0.55);
+      const CW=SZ*0.62, LH=SZ*1.15;
+      for(const sp of landSprites){
+        if(sp.op<0.02) continue;
+        const basePy=sp.r*LINE_H;
+        if(basePy>canvas.height+LINE_H*4||basePy+sp.lines.length*LH<-LINE_H) continue;
+        ctx.save(); ctx.globalAlpha=sp.op*0.85;
+        ctx.font=`${SZ}px ${MONO}`; ctx.textBaseline='top';
+        for(let li=0;li<sp.lines.length;li++){
+          const py=basePy+li*LH;
+          const line=sp.lines[li];
+          for(let ci=0;ci<line.length;ci++){
+            const ch=line[ci]; if(ch===' ') continue;
+            ctx.fillStyle=sp.colorFn(ch);
+            ctx.fillText(ch,sp.c*CHAR_W+ci*CW,py);
+          }
+        }
+        ctx.restore();
+      }
+
+      /* tartarugas */
+      for(const t of turtles){
+        if(t.op<0.02) continue;
+        const px=t.c*CHAR_W, py=t.r*LINE_H;
+        if(py<-LINE_H*2||py>canvas.height+LINE_H) continue;
+        ctx.save(); ctx.globalAlpha=t.op*0.82;
+        ctx.font=`${SZ}px ${MONO}`; ctx.textBaseline='top';
+        ctx.fillStyle='#7a5830'; ctx.fillText(' o',px,py);
+        ctx.fillStyle='#6a8848'; ctx.fillText('_O_',px,py+SZ*1.1);
+        ctx.restore();
+      }
+
+      /* patinhos */
+      for(const d of ducks){
+        if(d.op<0.02) continue;
+        const px=Math.floor(d.c)*CHAR_W, py=d.r*LINE_H;
+        if(py<-LINE_H*2||py>canvas.height+LINE_H) continue;
+        ctx.save(); ctx.globalAlpha=d.op*0.52;
+        ctx.font=`${SZ}px ${MONO}`; ctx.textBaseline='top';
+        ctx.fillStyle='#a89840'; ctx.fillText('>o)',px,py);
+        ctx.fillStyle='#957830'; ctx.fillText('(_>',px,py+SZ*1.1);
+        ctx.restore();
+      }
+    }
+
+    /* ── loop ── */
+    let lastTs=0;
+    function loop(ts){
+      if(!lastTs) lastTs=ts;
+      const dt=Math.min(ts-lastTs,50); lastTs=ts;
+      bgFrame++;
+      if(bgFrame%3===0) updateTile(bgFrame);
+      spawnParticles(); updateParticles();
+      updateLandSprites(); updateTurtles(); updateDucks();
+      renderBG();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('resize',()=>{
+      resize();
+      buildTile();
+    },{passive:true});
+
+    buildTile();
+    updateTile(0);
+    requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>
